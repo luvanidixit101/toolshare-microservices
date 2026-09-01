@@ -7,7 +7,7 @@ ToolShare is a polyglot microservices platform with a Java/Spring Boot backend a
 ## Quick Start for AI Agents
 
 ### Project Structure
-- **Backend**: 6 Java Spring Boot microservices + 1 API Gateway in `backend/`
+- **Backend**: 7 Java Spring Boot microservices + 1 API Gateway + 1 Service Discovery (Eureka Server) in `backend/`
 - **Frontend**: React/TypeScript SPA with Vite in `frontend/`
 - **Infrastructure**: Docker Compose with PostgreSQL in `docker/`
 
@@ -69,22 +69,26 @@ docker-compose logs -f {service-name}
 
 | Service | Port | Purpose | Database |
 |---------|------|---------|----------|
+| **Eureka Server** | 8761 | Service Discovery & Registry | N/A |
 | **API Gateway** | 8080 | Routes requests to backend services | N/A |
 | **Auth Service** | 8081 | User authentication, JWT token management, OAuth2 | `toolshare_auth` |
 | **User Service** | 8082 | User profiles, account management | `toolshare_user` |
 | **Tool Service** | 8083 | Tool listings, details, availability | `toolshare_tool` |
 | **Booking Service** | 8084 | Tool bookings, reservations | `toolshare_booking` |
-| **Chat Service** | 8085 | Direct messaging between users | `toolshare_chat` |
+| **AI Service** | 8086 | Recommendations, smart matching, AI search | N/A |
+| **Payment Service** | 8087 | Payment processing, transactions, payout management | `toolshare_payment` |
 | **Frontend** | 5173 | React SPA | N/A |
 
 ### Gateway Routing Patterns
 ```yaml
 # All requests go through API Gateway (port 8080)
-GET  /api/auth/**      → Auth Service (8081)
-GET  /api/users/**     → User Service (8082)
-GET  /api/tools/**     → Tool Service (8083)
-POST /api/bookings/**  → Booking Service (8084)
-GET  /api/chat/**      → Chat Service (8085)
+ALL /api/auth/**      → Auth Service (8081)
+ALL /api/users/**     → User Service (8082)
+ALL /api/profile/**   → User Service (8082)
+ALL /api/tools/**     → Tool Service (8083)
+ALL /api/bookings/**  → Booking Service (8084)
+ALL /api/payments/**  → Payment Service (8087)
+ALL /api/ai/**        → AI Service (8086)
 ```
 
 ### Technology Stack
@@ -112,7 +116,7 @@ GET  /api/chat/**      → Chat Service (8085)
 
 **Database**
 - PostgreSQL 16 Alpine
-- 5 separate databases (one per service)
+- 5 service databases (`toolshare_auth`, `toolshare_user`, `toolshare_tool`, `toolshare_booking`, `toolshare_payment`)
 - Schema auto-created via JPA Hibernate (`ddl-auto: update`)
 - Initialized at startup by `docker/postgres/init-databases.sql`
 
@@ -152,25 +156,32 @@ src/main/java/com/toolshare/{service-name}/
 ### Configuration via Environment Variables
 ```properties
 # Database
-DB_HOST=postgres
-DB_PORT=5432
-DB_USERNAME=admin
-DB_PASSWORD=admin
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=admin
 
 # Service-specific databases
 AUTH_DB_NAME=toolshare_auth
 USER_DB_NAME=toolshare_user
 TOOL_DB_NAME=toolshare_tool
 BOOKING_DB_NAME=toolshare_booking
-CHAT_DB_NAME=toolshare_chat
+PAYMENT_DB_NAME=toolshare_payment
 
 # Security
 JWT_SECRET=your-secret-key-here
-JWT_ACCESS_TOKEN_MINUTES=30
+JWT_ACCESS_TOKEN_MINUTES=60
 JWT_REFRESH_TOKEN_DAYS=7
 
-# CORS
+# CORS & Service URLs
 FRONTEND_URL=http://localhost:5173
+AUTH_SERVICE_URL=http://localhost:8081
+USER_SERVICE_URL=http://localhost:8082
+TOOL_SERVICE_URL=http://localhost:8083
+BOOKING_SERVICE_URL=http://localhost:8084
+AI_SERVICE_URL=http://localhost:8086
+PAYMENT_SERVICE_URL=http://localhost:8087
+EUREKA_SERVER_URL=http://localhost:8761/eureka/
 
 # Spring profiles
 SPRING_PROFILES_ACTIVE=dev
@@ -188,20 +199,25 @@ src/
 │   ├── layout/                    # Layout components (Navbar, Sidebar, etc.)
 │   └── tools/                     # Tool-specific components (ToolCard, etc.)
 ├── pages/                         # Full-page components (one per route)
+│   ├── admin/                     # Admin dashboard & management
 │   ├── auth/                      # Login, Register, ResetPassword pages
 │   ├── bookings/                  # Booking management pages
 │   ├── chat/                      # Chat/messaging pages
 │   ├── home/                      # Dashboard/landing page
+│   ├── payments/                  # Payment & payout pages
 │   ├── profile/                   # User profile pages
 │   └── tools/                     # Tool browsing/detail pages
 ├── services/                      # API integration layer
+│   ├── adminService.ts            # Admin management API calls
 │   ├── api.ts                     # Axios instance with base config
 │   ├── authService.ts             # Auth API calls
-│   ├── userService.ts             # User API calls
-│   ├── toolService.ts             # Tool API calls
 │   ├── bookingService.ts          # Booking API calls
-│   ├── chatService.ts             # Chat API calls
-│   └── mappers.ts                 # DTO → UI model conversions
+│   ├── chat.ts                    # Chat API calls
+│   ├── mappers.ts                 # DTO → UI model conversions
+│   ├── mockData.ts                # Mock data fallback layer
+│   ├── paymentService.ts          # Payment API calls
+│   ├── profileService.ts          # Profile API calls
+│   └── toolService.ts             # Tool API calls
 ├── context/                       # React Context for global state
 │   └── AuthContext.tsx            # Authentication context provider
 ├── hooks/                         # Custom React hooks
@@ -295,7 +311,7 @@ npm run test
 - **Backend**: Spring logs output to console, Spring Actuator at `/actuator` per service
 - **Frontend**: Browser DevTools, React DevTools extension
 - **Database**: Connect to PostgreSQL at `localhost:5432` with `admin/admin`
-- **API Testing**: Use Swagger UI at `http://localhost:{8080-8085}/swagger-ui.html`
+- **API Testing**: Use Swagger UI at `http://localhost:{8080-8087}/swagger-ui.html`
 
 ---
 
@@ -307,7 +323,7 @@ npm run test
 - Database credentials default to `admin/admin`; ensure PostgreSQL is running
 
 ### Port Conflicts
-- Services use ports 8080-8085; verify these ports are free before starting
+- Services use ports 8080-8087 & 8761; verify these ports are free before starting
 - Frontend uses port 5173; this is configurable in `vite.config.ts` but keep it as default
 
 ### CORS & Frontend

@@ -4,68 +4,33 @@ server:
 spring:
   application:
     name: api-gateway
-<<<<<<< HEAD
-
-  config:
-    import: optional:configserver:http://localhost:8888
-
-  cloud:
-    gateway:
-      mvc:
-        routes:
-          - id: auth-service
-            uri: lb://AUTH-SERVICE
-            predicates:
-              - Path=/api/auth/**
-          - id: user-service
-            uri: lb://USER-SERVICE
-            predicates:
-              - Path=/api/users/**
-          - id: tool-service
-            uri: lb://TOOL-SERVICE
-            predicates:
-              - Path=/api/tools/**
-          - id: booking-service
-            uri: lb://BOOKING-SERVICE
-            predicates:
-              - Path=/api/bookings/**
-          - id: review-service
-            uri: lb://REVIEW-SERVICE
-            predicates:
-              - Path=/api/reviews/**
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-=======
   cloud:
     gateway:
       default-filters:
         - PreserveHostHeader
       routes:
         - id: auth-service
-          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          uri: ${AUTH_SERVICE_URL:lb://AUTH-SERVICE}
           predicates:
             - Path=/api/auth/**
         - id: user-service
-          uri: ${USER_SERVICE_URL:http://localhost:8082}
+          uri: ${USER_SERVICE_URL:lb://USER-SERVICE}
           predicates:
             - Path=/api/users/**,/api/profile/**
         - id: tool-service
-          uri: ${TOOL_SERVICE_URL:http://localhost:8083}
+          uri: ${TOOL_SERVICE_URL:lb://TOOL-SERVICE}
           predicates:
             - Path=/api/tools/**
         - id: booking-service
-          uri: ${BOOKING_SERVICE_URL:http://localhost:8084}
+          uri: ${BOOKING_SERVICE_URL:lb://BOOKING-SERVICE}
           predicates:
             - Path=/api/bookings/**
-        - id: chat-service
-          uri: ${CHAT_SERVICE_URL:http://localhost:8085}
+        - id: payment-service
+          uri: ${PAYMENT_SERVICE_URL:lb://PAYMENT-SERVICE}
           predicates:
-            - Path=/api/chat/**
+            - Path=/api/payments/**
         - id: ai-service
-          uri: ${AI_SERVICE_URL:http://localhost:8086}
+          uri: ${AI_SERVICE_URL:lb://AI-SERVICE}
           predicates:
             - Path=/api/ai/**
       globalcors:
@@ -88,15 +53,18 @@ eureka:
               - Location
             allowCredentials: true
             maxAge: 3600
->>>>>>> 352f75b (fetch: service for ai-service add and auth service update & toolservice update)
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
 
 management:
   endpoints:
     web:
       exposure:
-<<<<<<< HEAD
-        include: health,info
-=======
         include: health,info,gateway
   endpoint:
     health:
@@ -110,5 +78,3 @@ springdoc:
 logging:
   level:
     org.springframework.cloud.gateway: INFO
-
->>>>>>> 352f75b (fetch: service for ai-service add and auth service update & toolservice update)

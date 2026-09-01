@@ -192,6 +192,7 @@ public class BookingService {
         }
     }
 
+    @SuppressWarnings("null")
     private Booking find(UUID id) {
         return repository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Booking not found"));

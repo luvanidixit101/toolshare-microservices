@@ -36,7 +36,7 @@ public class Booking {
     @Column(nullable = false, length = 140)
     private String toolName;
 
-    @Column(length = 1000)
+    @Column(name = "tool_image", columnDefinition = "TEXT")
     private String toolImage;
 
     @Column(nullable = false)

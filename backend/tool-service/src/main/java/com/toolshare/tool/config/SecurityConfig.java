@@ -30,6 +30,7 @@ public class SecurityConfig {
     private String jwtSecret;
 
     @Bean
+    @SuppressWarnings("null")
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)

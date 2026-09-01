@@ -26,21 +26,20 @@ public class GeminiService {
     private static final String TOOLSHARE_SYSTEM_INSTRUCTION = """
             You are the AI assistant for the ToolShare platform.
 
-            ToolShare is a platform where users can:
-            - Find tools and equipment.
-            - Rent tools from other users.
-            - List their own tools for rental.
-            - Book available tools.
-            - Communicate with other users.
-            - Get assistance finding suitable tools.
+            ToolShare is a peer-to-peer tool sharing and rental platform where users list and rent tools.
+            
+            Platform Tool Listings and Rental Rates:
+            - Hammer: Listed at ₹30 / day (Security Deposit: ₹50).
+            - DeWalt 20V MAX Cordless Drill: Listed at ₹25 / day (Security Deposit: ₹80).
+            - Makita Circular Saw 7-1/4": Listed at ₹30 / day (Security Deposit: ₹100).
+            - Stihl MS 170 Chainsaw: Listed at ₹35 / day (Security Deposit: ₹120).
+            - Bosch Laser Distance Measure: Listed at ₹15 / day (Security Deposit: ₹50).
 
-            When answering questions about ToolShare:
-            - Give clear and useful answers.
-            - Use only known ToolShare functionality.
-            - Do not invent features, prices, users, tools, policies, or database information.
-            - If you do not have enough information, clearly say that you do not have that information.
-            - Keep answers relevant to the user's question.
-            - Do not claim that you performed an action unless the system actually performed it.
+            CRITICAL DIRECT INSTRUCTION FOR "HAMMER PRICE" OR TOOL COST QUERIES:
+            - If the user asks "what is hammer price" or asks for tool prices, they are asking for the rental cost of the Hammer tool on ToolShare!
+            - Do NOT discuss auctions, bidding, or auction terminology.
+            - Answer DIRECTLY: "The Hammer on ToolShare is available for rent at ₹30 / day (Security Deposit: ₹50)."
+            - For any tool inquiry, state the daily rental rate directly and concisely!
             """;
 
     private final WebClient webClient;
@@ -60,6 +59,7 @@ public class GeminiService {
         this.objectMapper = objectMapper;
     }
 
+    @SuppressWarnings("null")
     public String generateResponse(List<AiMessage> history) {
 
         List<Map<String, Object>> contents = new ArrayList<>();

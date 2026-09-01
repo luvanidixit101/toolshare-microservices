@@ -3,6 +3,7 @@ package com.toolshare.auth.controller;
 import com.toolshare.auth.dto.ApiResponse;
 import com.toolshare.auth.dto.AuthResponse;
 import com.toolshare.auth.dto.ForgotPasswordRequest;
+import com.toolshare.auth.dto.GoogleLoginRequest;
 import com.toolshare.auth.dto.LoginRequest;
 import com.toolshare.auth.dto.RefreshTokenRequest;
 import com.toolshare.auth.dto.RegisterRequest;
@@ -42,6 +43,12 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.ok("Login successful", authService.login(request));
+    }
+
+    @Operation(summary = "Authenticate with Google ID Token")
+    @PostMapping("/google")
+    public ApiResponse<AuthResponse> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+        return ApiResponse.ok("Google login successful", authService.googleLogin(request));
     }
 
     @Operation(summary = "Refresh JWT tokens")

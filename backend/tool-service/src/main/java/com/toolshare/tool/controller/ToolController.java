@@ -1,6 +1,7 @@
 package com.toolshare.tool.controller;
 
 import com.toolshare.tool.dto.ApiResponse;
+import com.toolshare.tool.dto.CreateReviewRequest;
 import com.toolshare.tool.dto.PagedResponse;
 import com.toolshare.tool.dto.ReviewResponse;
 import com.toolshare.tool.dto.ToolPatchRequest;
@@ -133,6 +134,12 @@ public class ToolController {
     @GetMapping("/{id}/reviews")
     public ApiResponse<List<ReviewResponse>> reviews(@PathVariable UUID id) {
         return ApiResponse.ok("Reviews loaded", service.reviews(id));
+    }
+
+    @Operation(summary = "Add a review/comment to a tool")
+    @PostMapping("/{id}/reviews")
+    public ApiResponse<ReviewResponse> addReview(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CreateReviewRequest request) {
+        return ApiResponse.ok("Review added successfully", service.addReview(id, request, CurrentUser.from(jwt)));
     }
 }
 

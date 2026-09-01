@@ -59,6 +59,7 @@ public class AiConversationService {
         );
     }
 
+    @SuppressWarnings("null")
     private Conversation getOrCreateConversation(String conversationId) {
 
         if (conversationId == null || conversationId.isBlank()) {

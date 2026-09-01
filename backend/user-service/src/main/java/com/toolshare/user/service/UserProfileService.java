@@ -35,6 +35,7 @@ public class UserProfileService {
     }
 
     @Transactional(readOnly = true)
+    @SuppressWarnings("null")
     public UserProfileResponse getById(UUID id) {
         return repository.findById(id)
                 .map(this::toResponse)
@@ -58,6 +59,7 @@ public class UserProfileService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public void deleteMe(CurrentUser currentUser) {
         repository.deleteById(currentUser.id());
         log.info("Deleted profile {}", currentUser.id());
@@ -80,6 +82,7 @@ public class UserProfileService {
         throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "Password changes must be completed through the Auth Service credentials flow");
     }
 
+    @SuppressWarnings("null")
     private UserProfile getOrCreate(CurrentUser currentUser) {
         return repository.findById(currentUser.id()).orElseGet(() -> {
             UserProfile profile = new UserProfile();

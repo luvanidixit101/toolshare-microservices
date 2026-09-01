@@ -1,369 +1,276 @@
-# ToolShare Microservices
+# ToolShare 🛠️
 
-ToolShare is a peer-to-peer equipment and tool sharing microservice platform built with **Spring Boot 3**, **Spring Cloud Gateway**, **Spring Cloud Netflix Eureka**, **Spring Cloud Config**, and **PostgreSQL**.
+> A P2P equipment & tool sharing microservices platform built with Java 21, Spring Boot, React, TypeScript, and Docker.
 
----
-
-## 🚀 Services Overview & Ports
-
-| Service | Port | Base URL (Direct) | Description |
-| :--- | :---: | :--- | :--- |
-| **API Gateway** | `8080` | `http://localhost:8080` | Entry point for all client requests & routing |
-| **Auth Service** | `8081` | `http://localhost:8081` | User registration, authentication & session tokens |
-| **User Service** | `8082` | `http://localhost:8082` | User profiles, bio, contact info & ratings |
-| **Tool Service** | `8083` | `http://localhost:8083` | Tool listings, search, category & availability |
-| **Booking Service** | `8084` | `http://localhost:8084` | Tool rental reservations & status lifecycle |
-| **Review Service** | `8085` | `http://localhost:8085` | Ratings (1–5 stars) & review management |
-| **Discovery Server (Eureka)**| `8761` | `http://localhost:8761` | Service registration & discovery dashboard |
-| **Config Server** | `8888` | `http://localhost:8888` | Centralized Spring Cloud configuration |
+[![Java](https://img.shields.io/badge/Java-21-orange.svg?style=flat-square&logo=openjdk)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg?style=flat-square&logo=springboot)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18.3-blue.svg?style=flat-square&logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.4-purple.svg?style=flat-square&logo=vite)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC.svg?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED.svg?style=flat-square&logo=docker)](https://www.docker.com/)
 
 ---
 
-## 🛠️ How to Start Services
+## 📌 Overview
 
-### Startup Order
-1. **Config Server**: `mvn spring-boot:run` inside `backend/config-server`
-2. **Discovery Server**: `mvn spring-boot:run` inside `backend/discovery-server`
-3. **API Gateway**: `mvn spring-boot:run` inside `backend/api-gateway`
-4. **Microservices**: Run `mvn spring-boot:run` inside `backend/auth-service`, `backend/user-service`, `backend/tool-service`, `backend/booking-service`, and `backend/review-service`.
+**ToolShare** is a full-stack, polyglot microservices platform designed for community-driven equipment and tool sharing. It allows users to list power tools, garden equipment, construction machinery, and household tools for rent or peer-to-peer borrowing.
+
+The backend is engineered with **Spring Boot microservices**, utilizing **Spring Cloud Netflix Eureka** for service registry and **Spring Cloud API Gateway** for unified request routing. The frontend is a modern single-page application built with **React**, **TypeScript**, **Tailwind CSS**, and **Vite**.
 
 ---
 
-## 🧪 Complete API Testing Guide
+## ✨ Features
 
-All API requests can be tested via the **API Gateway** on port `8080`.
-
----
-
-### 1. 🔐 Auth Service (`/api/auth/**`)
-
-#### A. Register User
-- **Method**: `POST`
-- **URL**: `http://localhost:8080/api/auth/register`
-- **cURL Request**:
-  ```bash
-  curl -X POST http://localhost:8080/api/auth/register \
-    -H "Content-Type: application/json" \
-    -d '{
-      "fullName": "Dixit Luvani",
-      "email": "dixit@gmail.com",
-      "password": "123456"
-    }'
-  ```
-- **Response (`201 Created`)**:
-  ```json
-  {
-    "message": "User registered successfully"
-  }
-  ```
-
-#### B. Login User
-- **Method**: `POST`
-- **URL**: `http://localhost:8080/api/auth/login`
-- **cURL Request**:
-  ```bash
-  curl -X POST http://localhost:8080/api/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{
-      "email": "dixit@gmail.com",
-      "password": "123456"
-    }'
-  ```
-- **Response (`200 OK`)**:
-  ```json
-  {
-    "id": 1,
-    "fullName": "Dixit Luvani",
-    "email": "dixit@gmail.com",
-    "token": "TS-cc86a631-ee3f-47f5-b451-2fc9e326406a",
-    "tokenType": "Bearer"
-  }
-  ```
-
-#### C. Get User by Email
-- **Method**: `GET`
-- **URL**: `http://localhost:8080/api/auth/user?email=dixit@gmail.com`
-- **cURL Request**:
-  ```bash
-  curl -X GET "http://localhost:8080/api/auth/user?email=dixit@gmail.com"
-  ```
+- 🔐 **Authentication & Security**: JWT token management, refresh tokens, role-based access, and Google OAuth2 integration.
+- 🛠️ **Tool Catalog & Management**: List, search, edit, and filter tools by category, availability, and location.
+- 📅 **Smart Booking & Reservations**: Seamless rental booking calendar, status tracking, and reservation history.
+- 🤖 **AI Recommendations**: Intelligent tool recommendations and search powered by AI Service.
+- 💳 **Payments & Payouts**: Secure payment transaction processing and host payout tracking.
+- 🌐 **Responsive React SPA**: Modern UI styled with Tailwind CSS and Lucide icons, supporting both mock mode and full backend integration.
+- 🚦 **Resilient Microservice Architecture**: Decoupled domain databases, Spring Actuator monitoring, and OpenAPI/Swagger documentation.
 
 ---
 
-### 2. 👤 User Service (`/api/users/**`)
+## 🏗️ Architecture
 
-#### A. Create or Update User Profile
-- **Method**: `POST`
-- **URL**: `http://localhost:8080/api/users`
-- **cURL Request**:
-  ```bash
-  curl -X POST http://localhost:8080/api/users \
-    -H "Content-Type: application/json" \
-    -d '{
-      "userId": 1,
-      "fullName": "Dixit Luvani",
-      "email": "dixit@gmail.com",
-      "phone": "9876543210",
-      "address": "Ahmedabad, India",
-      "bio": "Passionate DIYer and Tool Enthusiast"
-    }'
-  ```
-- **Response (`201 Created`)**:
-  ```json
-  {
-    "id": 1,
-    "userId": 1,
-    "fullName": "Dixit Luvani",
-    "email": "dixit@gmail.com",
-    "phone": "9876543210",
-    "address": "Ahmedabad, India",
-    "bio": "Passionate DIYer and Tool Enthusiast",
-    "avatarUrl": null,
-    "rating": 5.0,
-    "createdAt": "2026-08-05T23:30:57.179"
-  }
-  ```
-
-#### B. Get All Profiles
-- **Method**: `GET`
-- **URL**: `http://localhost:8080/api/users`
-- **cURL Request**:
-  ```bash
-  curl -X GET http://localhost:8080/api/users
-  ```
-
-#### C. Get Profile by ID
-- **Method**: `GET`
-- **URL**: `http://localhost:8080/api/users/1`
-- **cURL Request**:
-  ```bash
-  curl -X GET http://localhost:8080/api/users/1
-  ```
-
----
-
-### 3. 🧰 Tool Service (`/api/tools/**`)
-
-#### A. Create a New Tool Listing
-- **Method**: `POST`
-- **URL**: `http://localhost:8080/api/tools`
-- **cURL Request**:
-  ```bash
-  curl -X POST http://localhost:8080/api/tools \
-    -H "Content-Type: application/json" \
-    -d '{
-      "title": "DeWalt Cordless Drill",
-      "description": "20V MAX Cordless Drill Combo Kit with 2 Batteries",
-      "category": "Power Tools",
-      "pricePerDay": 25.00,
-      "depositAmount": 50.00,
-      "location": "Ahmedabad",
-      "ownerId": 1
-    }'
-  ```
-- **Response (`201 Created`)**:
-  ```json
-  {
-    "id": 1,
-    "title": "DeWalt Cordless Drill",
-    "description": "20V MAX Cordless Drill Combo Kit with 2 Batteries",
-    "category": "Power Tools",
-    "pricePerDay": 25.00,
-    "depositAmount": 50.00,
-    "location": "Ahmedabad",
-    "imageUrl": null,
-    "ownerId": 1,
-    "isAvailable": true,
-    "createdAt": "2026-08-05T23:31:58.779"
-  }
-  ```
-
-#### B. Get All Tools (with Optional Search Filter)
-- **Method**: `GET`
-- **URL**: `http://localhost:8080/api/tools`
-- **Query Params**: `category=Power Tools` or `query=DeWalt`
-- **cURL Request**:
-  ```bash
-  curl -X GET "http://localhost:8080/api/tools?category=Power%20Tools"
-  ```
-
-#### C. Get Tool by ID
-- **Method**: `GET`
-- **URL**: `http://localhost:8080/api/tools/1`
-- **cURL Request**:
-  ```bash
-  curl -X GET http://localhost:8080/api/tools/1
-  ```
-
-#### D. Get Tools by Owner
-- **Method**: `GET`
-- **URL**: `http://localhost:8080/api/tools/owner/1`
-- **cURL Request**:
-  ```bash
-  curl -X GET http://localhost:8080/api/tools/owner/1
-  ```
-
-#### E. Update Tool Details
-- **Method**: `PUT`
-- **URL**: `http://localhost:8080/api/tools/1`
-- **cURL Request**:
-  ```bash
-  curl -X PUT http://localhost:8080/api/tools/1 \
-    -H "Content-Type: application/json" \
-    -d '{
-      "pricePerDay": 30.00,
-      "location": "Gandhinagar"
-    }'
-  ```
-
-#### F. Toggle Availability
-- **Method**: `PATCH`
-- **URL**: `http://localhost:8080/api/tools/1/availability?available=false`
-- **cURL Request**:
-  ```bash
-  curl -X PATCH "http://localhost:8080/api/tools/1/availability?available=false"
-  ```
-
----
-
-### 4. 📅 Booking Service (`/api/bookings/**`)
-
-#### A. Create a Rental Booking Request
-- **Method**: `POST`
-- **URL**: `http://localhost:8080/api/bookings`
-- **cURL Request**:
-  ```bash
-  curl -X POST http://localhost:8080/api/bookings \
-    -H "Content-Type: application/json" \
-    -d '{
-      "toolId": 1,
-      "borrowerId": 2,
-      "ownerId": 1,
-      "startDate": "2026-08-10",
-      "endDate": "2026-08-12",
-      "totalPrice": 50.00
-    }'
-  ```
-- **Response (`201 Created`)**:
-  ```json
-  {
-    "id": 1,
-    "toolId": 1,
-    "borrowerId": 2,
-    "ownerId": 1,
-    "startDate": "2026-08-10",
-    "endDate": "2026-08-12",
-    "totalPrice": 50.00,
-    "status": "PENDING",
-    "createdAt": "2026-08-05T23:31:59.662"
-  }
-  ```
-
-#### B. Get Bookings by Borrower (Rental History)
-- **Method**: `GET`
-- **URL**: `http://localhost:8080/api/bookings/borrower/2`
-- **cURL Request**:
-  ```bash
-  curl -X GET http://localhost:8080/api/bookings/borrower/2
-  ```
-
-#### C. Get Bookings by Owner (Incoming Tool Requests)
-- **Method**: `GET`
-- **URL**: `http://localhost:8080/api/bookings/owner/1`
-- **cURL Request**:
-  ```bash
-  curl -X GET http://localhost:8080/api/bookings/owner/1
-  ```
-
-#### D. Update Booking Status (`APPROVED`, `REJECTED`, `COMPLETED`, `CANCELLED`)
-- **Method**: `PATCH`
-- **URL**: `http://localhost:8080/api/bookings/1/status?status=APPROVED`
-- **cURL Request**:
-  ```bash
-  curl -X PATCH "http://localhost:8080/api/bookings/1/status?status=APPROVED"
-  ```
-
----
-
-### 5. ⭐ Review Service (`/api/reviews/**`)
-
-#### A. Submit Tool Review
-- **Method**: `POST`
-- **URL**: `http://localhost:8080/api/reviews`
-- **cURL Request**:
-  ```bash
-  curl -X POST http://localhost:8080/api/reviews \
-    -H "Content-Type: application/json" \
-    -d '{
-      "toolId": 1,
-      "reviewerId": 2,
-      "rating": 5,
-      "comment": "Great tool! Works perfectly for heavy drilling."
-    }'
-  ```
-- **Response (`201 Created`)**:
-  ```json
-  {
-    "id": 1,
-    "toolId": 1,
-    "reviewerId": 2,
-    "rating": 5,
-    "comment": "Great tool! Works perfectly for heavy drilling.",
-    "createdAt": "2026-08-05T23:32:00.402"
-  }
-  ```
-
-#### B. Get Reviews for a Tool
-- **Method**: `GET`
-- **URL**: `http://localhost:8080/api/reviews/tool/1`
-- **cURL Request**:
-  ```bash
-  curl -X GET http://localhost:8080/api/reviews/tool/1
-  ```
-
-#### C. Get Calculated Average Rating for a Tool
-- **Method**: `GET`
-- **URL**: `http://localhost:8080/api/reviews/tool/1/rating`
-- **cURL Request**:
-  ```bash
-  curl -X GET http://localhost:8080/api/reviews/tool/1/rating
-  ```
-- **Response (`200 OK`)**:
-  ```json
-  {
-    "toolId": 1,
-    "averageRating": 5.0
-  }
-  ```
-
----
-
-## ⚡ Automated Testing Script (PowerShell)
-
-You can run this PowerShell script to test all endpoints automatically in sequence:
-
-```powershell
-# 1. Login
-$login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" -Method Post -ContentType "application/json" -Body '{"email": "dixit@gmail.com", "password": "123456"}'
-Write-Host "Auth Login Token:" $login.token
-
-# 2. User Profile
-$user = Invoke-RestMethod -Uri "http://localhost:8080/api/users" -Method Post -ContentType "application/json" -Body '{"userId": 1, "fullName": "Dixit Luvani", "email": "dixit@gmail.com", "phone": "9876543210", "address": "Ahmedabad, India", "bio": "Passionate DIYer"}'
-Write-Host "User Profile ID:" $user.id
-
-# 3. Create Tool
-$tool = Invoke-RestMethod -Uri "http://localhost:8080/api/tools" -Method Post -ContentType "application/json" -Body '{"title": "DeWalt Cordless Drill", "description": "20V MAX Cordless Drill Combo Kit", "category": "Power Tools", "pricePerDay": 25.00, "depositAmount": 50.00, "location": "Ahmedabad", "ownerId": 1}'
-Write-Host "Tool ID:" $tool.id
-
-# 4. Create Booking
-$booking = Invoke-RestMethod -Uri "http://localhost:8080/api/bookings" -Method Post -ContentType "application/json" -Body '{"toolId": 1, "borrowerId": 2, "ownerId": 1, "startDate": "2026-08-10", "endDate": "2026-08-12", "totalPrice": 50.00}'
-Write-Host "Booking ID:" $booking.id "Status:" $booking.status
-
-# 5. Create Review
-$review = Invoke-RestMethod -Uri "http://localhost:8080/api/reviews" -Method Post -ContentType "application/json" -Body '{"toolId": 1, "reviewerId": 2, "rating": 5, "comment": "Great tool! Works perfectly."}'
-Write-Host "Review ID:" $review.id
-
-# 6. Check Rating
-$rating = Invoke-RestMethod -Uri "http://localhost:8080/api/reviews/tool/1/rating" -Method Get
-Write-Host "Average Rating:" $rating.averageRating
+```mermaid
+graph TD
+    Client[📱 React SPA Frontend - Port 5173] --> Gateway[🚪 API Gateway - Port 8080]
+    
+    Gateway --> Eureka[🔍 Eureka Server - Port 8761]
+    Gateway --> Auth[🔐 Auth Service - Port 8081]
+    Gateway --> User[👤 User Service - Port 8082]
+    Gateway --> Tool[🛠️ Tool Service - Port 8083]
+    Gateway --> Booking[📅 Booking Service - Port 8084]
+    Gateway --> AI[🤖 AI Service - Port 8086]
+    Gateway --> Payment[💳 Payment Service - Port 8087]
+    
+    Auth --> DB_Auth[(🗄️ PostgreSQL: toolshare_auth)]
+    User --> DB_User[(🗄️ PostgreSQL: toolshare_user)]
+    Tool --> DB_Tool[(🗄️ PostgreSQL: toolshare_tool)]
+    Booking --> DB_Booking[(🗄️ PostgreSQL: toolshare_booking)]
+    Payment --> DB_Payment[(🗄️ PostgreSQL: toolshare_payment)]
 ```
+
+---
+
+## ⚙️ Microservices Overview
+
+| Microservice | Port | Database | Primary Responsibility |
+| :--- | :---: | :---: | :--- |
+| **Eureka Server** | `8761` | N/A | Service discovery registry and health dashboard |
+| **API Gateway** | `8080` | N/A | Single entry point, CORS, routing to downstream services |
+| **Auth Service** | `8081` | `toolshare_auth` | Authentication, JWT token generation, OAuth2 |
+| **User Service** | `8082` | `toolshare_user` | User profiles, account settings, user metadata |
+| **Tool Service** | `8083` | `toolshare_tool` | Tool listings, availability, rental pricing |
+| **Booking Service** | `8084` | `toolshare_booking` | Reservation bookings, scheduling, status updates |
+| **AI Service** | `8086` | N/A | Smart recommendations, automated matching |
+| **Payment Service** | `8087` | `toolshare_payment` | Payment transactions, invoices, payout management |
+| **Frontend** | `5173` | N/A | React SPA with Vite & Tailwind CSS |
+
+---
+
+## 🧰 Tech Stack
+
+### Backend
+- **Language**: Java 21
+- **Framework**: Spring Boot 3.3.5 (API Gateway: 3.2.5)
+- **Security**: Spring Security, JWT, OAuth2 Resource Server
+- **Data Access**: Spring Data JPA, Hibernate, PostgreSQL 16
+- **Service Discovery & Gateway**: Spring Cloud Eureka, Spring Cloud Gateway
+- **Documentation**: SpringDoc OpenAPI (Swagger UI)
+- **Utilities**: Lombok, Spring Actuator
+
+### Frontend
+- **Framework**: React 18
+- **Language**: TypeScript 5.5
+- **Build Tool**: Vite 5.4
+- **Styling**: Tailwind CSS 3.4
+- **HTTP Client**: Axios
+- **Icons**: Lucide React
+- **Integration**: Supabase JS Client & REST APIs
+
+### Infrastructure & Operations
+- **Containerization**: Docker & Docker Compose
+- **Database**: PostgreSQL 16 Alpine (Multi-database initialization script)
+- **API Testing**: Postman Collection & Environment included
+
+---
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+
+Ensure you have the following installed on your machine:
+- **Java Development Kit (JDK) 21** or later
+- **Apache Maven 3.8+**
+- **Node.js 18+** & **npm**
+- **Docker & Docker Compose**
+
+---
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/your-username/ToolShare.git
+cd ToolShare
+```
+
+---
+
+### Step 2: Environment Configuration
+
+Copy the sample environment file to create your `.env` file:
+
+```bash
+cp .env.example .env
+```
+
+Ensure default environment variables match your local environment setup:
+- `POSTGRES_USER=admin`
+- `POSTGRES_PASSWORD=admin`
+- `JWT_SECRET=your-secure-jwt-secret-key-here`
+
+---
+
+### Step 3: Start Infrastructure (PostgreSQL)
+
+Launch the multi-database PostgreSQL container using Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+*This automatically initializes all 5 microservice databases (`toolshare_auth`, `toolshare_user`, `toolshare_tool`, `toolshare_booking`, `toolshare_payment`).*
+
+---
+
+### Step 4: Build & Launch Backend Microservices
+
+1. **Build all backend microservices:**
+   ```bash
+   mvn -f backend/pom.xml clean install
+   ```
+
+2. **Start Service Discovery (Eureka Server):**
+   ```bash
+   mvn -f backend/eureka-server/pom.xml spring-boot:run
+   ```
+   *Dashboard available at: `http://localhost:8761`*
+
+3. **Start API Gateway:**
+   ```bash
+   mvn -f backend/api-gateway/pom.xml spring-boot:run
+   ```
+
+4. **Start Microservices** (run each in a terminal or background process):
+   ```bash
+   mvn -f backend/auth-service/pom.xml spring-boot:run
+   mvn -f backend/user-service/pom.xml spring-boot:run
+   mvn -f backend/tool-service/pom.xml spring-boot:run
+   mvn -f backend/booking-service/pom.xml spring-boot:run
+   mvn -f backend/ai-service/pom.xml spring-boot:run
+   mvn -f backend/payment-service/pom.xml spring-boot:run
+   ```
+
+---
+
+### Step 5: Start Frontend Development Server
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open your browser and navigate to **`http://localhost:5173`**.
+
+---
+
+## 📖 API Documentation & Swagger
+
+Once the microservices are running, interactive Swagger UI documentation is accessible at:
+
+- 🔓 **Auth Service**: `http://localhost:8081/swagger-ui.html`
+- 👤 **User Service**: `http://localhost:8082/swagger-ui.html`
+- 🛠️ **Tool Service**: `http://localhost:8083/swagger-ui.html`
+- 📅 **Booking Service**: `http://localhost:8084/swagger-ui.html`
+- 🤖 **AI Service**: `http://localhost:8086/swagger-ui.html`
+- 💳 **Payment Service**: `http://localhost:8087/swagger-ui.html`
+
+All requests routed through API Gateway (`http://localhost:8080/api/...`) follow these routing conventions:
+
+```text
+/api/auth/**      → Auth Service (8081)
+/api/users/**     → User Service (8082)
+/api/profile/**   → User Service (8082)
+/api/tools/**     → Tool Service (8083)
+/api/bookings/**  → Booking Service (8084)
+/api/ai/**        → AI Service (8086)
+/api/payments/**  → Payment Service (8087)
+```
+
+---
+
+## 🧪 Testing & Postman
+
+A pre-configured Postman Collection and Environment are provided in the repository root:
+
+- `toolshare-postman-collection.json`
+- `toolshare-postman-environment.json`
+
+Import both files into [Postman](https://www.postman.com/) to start testing all REST API endpoints out of the box.
+
+---
+
+## 📂 Project Structure
+
+```text
+ToolShare/
+├── backend/
+│   ├── ai-service/        # Recommendation & smart matching service
+│   ├── api-gateway/       # Spring Cloud API Gateway
+│   ├── auth-service/      # Authentication & JWT security service
+│   ├── booking-service/   # Reservation & booking service
+│   ├── eureka-server/     # Service registry & discovery
+│   ├── payment-service/   # Transaction & payout service
+│   ├── tool-service/      # Tool inventory service
+│   ├── user-service/       # User profile service
+│   └── pom.xml            # Parent Maven configuration
+├── docker/
+│   └── postgres/
+│       └── init-databases.sql # SQL script creating service databases
+├── frontend/
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── context/       # Auth & app contexts
+│   │   ├── pages/         # Page views (Auth, Tools, Bookings, Admin, etc.)
+│   │   ├── services/      # Axios API integration services
+│   │   ├── types/         # TypeScript interfaces & types
+│   │   └── App.tsx        # Router & primary component
+│   ├── package.json
+│   └── vite.config.ts
+├── docker-compose.yml     # Infrastructure services configuration
+├── .env.example           # Environment template
+└── AGENTS.md              # AI agent guidelines & internal setup specs
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome!
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📝 License
+
+Distributed under the MIT License.

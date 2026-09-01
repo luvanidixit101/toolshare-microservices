@@ -20,6 +20,7 @@ class UserProfileServiceTest {
     private final UserProfileService service = new UserProfileService(repository);
 
     @Test
+    @SuppressWarnings("null")
     void patchMeUpdatesOnlyProvidedFields() {
         UUID userId = UUID.randomUUID();
         UserProfile profile = new UserProfile();

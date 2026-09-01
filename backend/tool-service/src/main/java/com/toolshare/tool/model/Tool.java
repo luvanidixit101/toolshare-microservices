@@ -85,7 +85,7 @@ public class Tool {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "tool_images", joinColumns = @JoinColumn(name = "tool_id"))
-    @Column(name = "image_url", length = 1000)
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private List<String> images = new ArrayList<>();
 
     @Column(nullable = false, precision = 3, scale = 2)

@@ -9,6 +9,7 @@ import org.springframework.web.client.RestClient;
 public class RestClientConfig {
 
     @Bean
+    @SuppressWarnings("null")
     RestClient toolRestClient(RestClient.Builder builder, @Value("${toolshare.services.tool-url}") String toolServiceUrl) {
         return builder.baseUrl(toolServiceUrl).build();
     }
