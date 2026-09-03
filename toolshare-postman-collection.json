@@ -157,8 +157,9 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idToken\": \"mock_google_testuser\"\n}"
+              "raw": "{\n  \"idToken\": \"{{googleIdToken}}\"\n}"
             },
+            "description": "Authenticates a user via Google OAuth2 ID Token. Uses Just-In-Time (JIT) provisioning to automatically persist/update user identity in PostgreSQL (toolshare_auth and toolshare_user databases) and returns a ToolShare JWT token.",
             "url": {
               "raw": "{{baseUrl}}/api/auth/google",
               "host": [

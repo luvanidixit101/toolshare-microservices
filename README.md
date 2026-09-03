@@ -72,6 +72,42 @@ graph TD
 
 ---
 
+## 🔐 Google Auth Architecture & Data Persistence
+
+In **ToolShare**, user accounts created via **Google OAuth2 / Sign-In** are automatically persisted into PostgreSQL (`toolshare_auth` and `toolshare_user` databases) using **Just-In-Time (JIT) Provisioning**.
+
+### Why Google Auth Users are Saved in PostgreSQL
+While Google verifies user identity (Authentication), ToolShare's PostgreSQL database manages application domain data, microservice entity references, and authorization:
+- 🔗 **Foreign Key Integrity**: Tool listings (`toolshare_tool`), bookings (`toolshare_booking`), and payments (`toolshare_payment`) require a primary key `user_id` (UUID) to link records to owners and renters.
+- 🛡️ **App Roles & Security**: User roles (`ROLE_USER`, `ROLE_ADMIN`) and account status are stored locally in the `users` table.
+- 👤 **Application Profiles**: Local profile data such as phone numbers, bio, ratings, and addresses are managed in `toolshare_user`.
+- ⚡ **Performance & Decoupling**: Issuing a local JWT after JIT provisioning allows the API Gateway to route and validate requests cleanly without calling Google APIs on every request.
+
+### Google Auth Sequence & JIT Provisioning Flow
+
+```mermaid
+sequenceDiagram
+    participant Client as 📱 React SPA
+    participant Gateway as 🚪 API Gateway (8080)
+    participant Auth as 🔐 Auth Service (8081)
+    participant DB as 🗄️ PostgreSQL (toolshare_auth)
+    participant Google as 🌐 Google OAuth API
+
+    Client->>Google: 1. Authenticate & Obtain Google ID Token
+    Client->>Gateway: 2. POST /api/auth/google { "idToken": "..." }
+    Gateway->>Auth: 3. Route request to Auth Service
+    Auth->>Google: 4. Verify Google ID Token & extract email, name, sub
+    Auth->>DB: 5. Lookup user by email / google_sub
+    alt User does not exist in PostgreSQL
+        Auth->>DB: 6a. INSERT INTO users (id, email, first_name, provider='GOOGLE', google_sub)
+    else User exists
+        Auth->>DB: 6b. UPDATE last_login timestamp
+    end
+    Auth-->>Client: 7. Return ToolShare JWT Token & User ID
+```
+
+---
+
 ## 🧰 Tech Stack
 
 ### Backend

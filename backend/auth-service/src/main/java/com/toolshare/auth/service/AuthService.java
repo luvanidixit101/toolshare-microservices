@@ -93,12 +93,17 @@ public class AuthService {
         String email;
         String firstName;
         String lastName;
+        String googleSub;
+        String pictureUrl = null;
 
         String rawToken = request.idToken();
         if (rawToken != null && rawToken.startsWith("mock_google_")) {
-            email = rawToken.replace("mock_google_", "") + "@gmail.com";
+            String identifier = rawToken.replace("mock_google_", "");
+            email = identifier + "@gmail.com";
             firstName = "Google";
             lastName = "User";
+            googleSub = "mock_sub_" + identifier;
+            pictureUrl = "https://lh3.googleusercontent.com/a/default-user";
         } else {
             try {
                 Jwt jwt = googleJwtDecoder.decode(rawToken);
@@ -106,6 +111,8 @@ public class AuthService {
                 if (email == null || email.isBlank()) {
                     throw new ApiException(HttpStatus.BAD_REQUEST, "Google token does not contain a valid email");
                 }
+                googleSub = jwt.getSubject();
+                pictureUrl = jwt.getClaimAsString("picture");
                 firstName = jwt.getClaimAsString("given_name");
                 lastName = jwt.getClaimAsString("family_name");
                 if (firstName == null || firstName.isBlank()) {
@@ -126,15 +133,28 @@ public class AuthService {
         final String finalFirstName = firstName;
         final String finalLastName = lastName;
         final String finalEmail = email.toLowerCase().trim();
+        final String finalGoogleSub = googleSub;
+        final String finalPictureUrl = pictureUrl;
 
-        AppUser user = userRepository.findByEmailIgnoreCase(finalEmail)
+        AppUser user = (finalGoogleSub != null ? userRepository.findByGoogleSub(finalGoogleSub) : java.util.Optional.<AppUser>empty())
+                .or(() -> userRepository.findByEmailIgnoreCase(finalEmail))
+                .map(existingUser -> {
+                    existingUser.setProvider("GOOGLE");
+                    if (finalGoogleSub != null) existingUser.setGoogleSub(finalGoogleSub);
+                    if (finalPictureUrl != null) existingUser.setPictureUrl(finalPictureUrl);
+                    log.info("Persisted Google user update in PostgreSQL toolshare_auth: {}", existingUser.getId());
+                    return userRepository.save(existingUser);
+                })
                 .orElseGet(() -> {
-                    log.info("Creating new user from Google Login: {}", finalEmail);
+                    log.info("Persisting new JIT Google user in PostgreSQL toolshare_auth: {}", finalEmail);
                     AppUser newUser = new AppUser();
                     newUser.setFirstName(finalFirstName);
                     newUser.setLastName(finalLastName);
                     newUser.setEmail(finalEmail);
                     newUser.setPhone("");
+                    newUser.setProvider("GOOGLE");
+                    newUser.setGoogleSub(finalGoogleSub);
+                    newUser.setPictureUrl(finalPictureUrl);
                     newUser.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
                     newUser.setRole(Role.USER);
                     newUser.setEnabled(true);
@@ -145,7 +165,7 @@ public class AuthService {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Account is disabled");
         }
 
-        log.info("Authenticated Google user {}", user.getId());
+        log.info("Successfully authenticated Google user {} ({}) from PostgreSQL", user.getId(), user.getEmail());
         return authResponse(user);
     }
 
