@@ -27,6 +27,12 @@
       "enabled": true
     },
     {
+      "key": "googleIdToken",
+      "value": "mock_google_testuser",
+      "type": "secret",
+      "enabled": true
+    },
+    {
       "key": "userId",
       "value": "",
       "type": "default",

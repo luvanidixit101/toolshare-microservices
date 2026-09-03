@@ -9,6 +9,8 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<AppUser, UUID> {
     Optional<AppUser> findByEmailIgnoreCase(String email);
 
+    Optional<AppUser> findByGoogleSub(String googleSub);
+
     boolean existsByEmailIgnoreCase(String email);
 }
 
