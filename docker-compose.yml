@@ -17,6 +17,143 @@ services:
       timeout: 5s
       retries: 5
 
+  eureka-server:
+    build: ./backend/eureka-server
+    container_name: toolshare-eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+
+  api-gateway:
+    build: ./backend/api-gateway
+    container_name: toolshare-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - AUTH_SERVICE_URL=http://auth-service:8081
+      - USER_SERVICE_URL=http://user-service:8082
+      - TOOL_SERVICE_URL=http://tool-service:8083
+      - BOOKING_SERVICE_URL=http://booking-service:8084
+      - PAYMENT_SERVICE_URL=http://payment-service:8087
+      - AI_SERVICE_URL=http://ai-service:8086
+      - FRONTEND_URL=http://localhost:5173
+    depends_on:
+      - eureka-server
+
+  auth-service:
+    build: ./backend/auth-service
+    container_name: toolshare-auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - AUTH_DB_NAME=toolshare_auth
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - JWT_SECRET=your-secret-key-must-be-at-least-256-bits-long-for-hs256-security-standard
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  user-service:
+    build: ./backend/user-service
+    container_name: toolshare-user-service
+    ports:
+      - "8082:8082"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - USER_DB_NAME=toolshare_user
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - JWT_SECRET=your-secret-key-must-be-at-least-256-bits-long-for-hs256-security-standard
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  tool-service:
+    build: ./backend/tool-service
+    container_name: toolshare-tool-service
+    ports:
+      - "8083:8083"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - TOOL_DB_NAME=toolshare_tool
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - JWT_SECRET=your-secret-key-must-be-at-least-256-bits-long-for-hs256-security-standard
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  booking-service:
+    build: ./backend/booking-service
+    container_name: toolshare-booking-service
+    ports:
+      - "8084:8084"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - BOOKING_DB_NAME=toolshare_booking
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - JWT_SECRET=your-secret-key-must-be-at-least-256-bits-long-for-hs256-security-standard
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  ai-service:
+    build: ./backend/ai-service
+    container_name: toolshare-ai-service
+    ports:
+      - "8086:8086"
+    environment:
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+
+  payment-service:
+    build: ./backend/payment-service
+    container_name: toolshare-payment-service
+    ports:
+      - "8087:8087"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - PAYMENT_DB_NAME=toolshare_payment
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - JWT_SECRET=your-secret-key-must-be-at-least-256-bits-long-for-hs256-security-standard
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    container_name: toolshare-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api-gateway
+
 volumes:
   toolshare-postgres-data:
-
