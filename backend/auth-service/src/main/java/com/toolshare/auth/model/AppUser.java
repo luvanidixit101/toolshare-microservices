@@ -43,17 +43,8 @@ public class AppUser {
     @Column(length = 40)
     private String phone;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     private String passwordHash;
-
-    @Column(length = 20)
-    private String provider = "LOCAL";
-
-    @Column(length = 160)
-    private String googleSub;
-
-    @Column(length = 500)
-    private String pictureUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

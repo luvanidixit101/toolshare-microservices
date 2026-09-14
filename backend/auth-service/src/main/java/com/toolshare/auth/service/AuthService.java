@@ -110,53 +110,12 @@ public class AuthService {
 
     @Transactional
     public AuthResponse googleLogin(GoogleLoginRequest request) {
-<<<<<<< HEAD
         String rawToken = request != null ? request.idToken() : null;
         if (rawToken == null || rawToken.isBlank()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Google ID token is required");
         }
         if (rawToken.startsWith("mock_google_")) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid Google ID token");
-=======
-        String email;
-        String firstName;
-        String lastName;
-        String googleSub;
-        String pictureUrl = null;
-
-        String rawToken = request.idToken();
-        if (rawToken != null && rawToken.startsWith("mock_google_")) {
-            String identifier = rawToken.replace("mock_google_", "");
-            email = identifier + "@gmail.com";
-            firstName = "Google";
-            lastName = "User";
-            googleSub = "mock_sub_" + identifier;
-            pictureUrl = "https://lh3.googleusercontent.com/a/default-user";
-        } else {
-            try {
-                Jwt jwt = googleJwtDecoder.decode(rawToken);
-                email = jwt.getClaimAsString("email");
-                if (email == null || email.isBlank()) {
-                    throw new ApiException(HttpStatus.BAD_REQUEST, "Google token does not contain a valid email");
-                }
-                googleSub = jwt.getSubject();
-                pictureUrl = jwt.getClaimAsString("picture");
-                firstName = jwt.getClaimAsString("given_name");
-                lastName = jwt.getClaimAsString("family_name");
-                if (firstName == null || firstName.isBlank()) {
-                    firstName = jwt.getClaimAsString("name");
-                }
-                if (firstName == null || firstName.isBlank()) {
-                    firstName = "Google";
-                }
-                if (lastName == null) {
-                    lastName = "User";
-                }
-            } catch (Exception e) {
-                log.error("Failed to verify Google ID token: {}", e.getMessage());
-                throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid Google ID token");
-            }
->>>>>>> 767f69e70fc64b6ba2f026ffdfff0e96ea20779e
         }
 
         final Jwt googleJwt;
@@ -182,10 +141,7 @@ public class AuthService {
         final String finalFirstName = firstName.trim();
         final String finalLastName = lastName.trim();
         final String finalEmail = email.toLowerCase().trim();
-        final String finalGoogleSub = googleSub;
-        final String finalPictureUrl = pictureUrl;
 
-<<<<<<< HEAD
         AppUser user = userRepository.findByGoogleSubject(subject)
                 .orElseGet(() -> {
                     if (userRepository.existsByEmailIgnoreCase(finalEmail)) {
@@ -193,28 +149,12 @@ public class AuthService {
                                 "An account with this email already exists. Sign in with your password before linking Google.");
                     }
                     log.info("Creating new user from Google Login: {}", finalEmail);
-=======
-        AppUser user = (finalGoogleSub != null ? userRepository.findByGoogleSub(finalGoogleSub) : java.util.Optional.<AppUser>empty())
-                .or(() -> userRepository.findByEmailIgnoreCase(finalEmail))
-                .map(existingUser -> {
-                    existingUser.setProvider("GOOGLE");
-                    if (finalGoogleSub != null) existingUser.setGoogleSub(finalGoogleSub);
-                    if (finalPictureUrl != null) existingUser.setPictureUrl(finalPictureUrl);
-                    log.info("Persisted Google user update in PostgreSQL toolshare_auth: {}", existingUser.getId());
-                    return userRepository.save(existingUser);
-                })
-                .orElseGet(() -> {
-                    log.info("Persisting new JIT Google user in PostgreSQL toolshare_auth: {}", finalEmail);
->>>>>>> 767f69e70fc64b6ba2f026ffdfff0e96ea20779e
                     AppUser newUser = new AppUser();
                     newUser.setFirstName(finalFirstName);
                     newUser.setLastName(finalLastName);
                     newUser.setEmail(finalEmail);
                     newUser.setGoogleSubject(subject);
                     newUser.setPhone("");
-                    newUser.setProvider("GOOGLE");
-                    newUser.setGoogleSub(finalGoogleSub);
-                    newUser.setPictureUrl(finalPictureUrl);
                     newUser.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
                     newUser.setRole(Role.USER);
                     newUser.setEnabled(true);
@@ -225,7 +165,7 @@ public class AuthService {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Account is disabled");
         }
 
-        log.info("Successfully authenticated Google user {} ({}) from PostgreSQL", user.getId(), user.getEmail());
+        log.info("Authenticated Google user {}", user.getId());
         return authResponse(user);
     }
 

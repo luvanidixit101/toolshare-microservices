@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
@@ -16,12 +15,3 @@ FROM nginx:1.27-alpine
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
-=======
-FROM node:20-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-EXPOSE 5173
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
->>>>>>> 767f69e70fc64b6ba2f026ffdfff0e96ea20779e
