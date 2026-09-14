@@ -4,7 +4,8 @@ import {
   ArrowRight, CheckCircle2, Users, ShieldCheck, IndianRupee, Star, Quote,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { CATEGORIES, mockTools } from '@/services/mockData';
+import { CATEGORIES } from '@/services/mockData';
+import { getTools } from '@/services/toolService';
 import type { Tool } from '@/types';
 import ToolCard from '@/components/tools/ToolCard';
 import StarRating from '@/components/common/StarRating';
@@ -35,7 +36,9 @@ export default function Home() {
   const [featured, setFeatured] = useState<Tool[]>([]);
 
   useEffect(() => {
-    setFeatured(mockTools.slice(0, 6));
+    getTools({ sort: 'rating_desc', page: 1, size: 6 })
+      .then((result) => setFeatured(result.items.slice(0, 6)))
+      .catch(() => setFeatured([]));
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {

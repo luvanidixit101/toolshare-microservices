@@ -52,6 +52,7 @@ export const bookingStatusConfig: Record<
   ACTIVE: { label: 'Active', color: 'bg-green-100 text-green-800' },
   COMPLETED: { label: 'Completed', color: 'bg-gray-100 text-gray-700' },
   CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-700' },
+  EXPIRED: { label: 'Expired', color: 'bg-gray-100 text-gray-600' },
 };
 
 export function classNames(...parts: (string | false | undefined | null)[]): string {

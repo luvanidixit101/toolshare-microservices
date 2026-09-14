@@ -10,34 +10,21 @@ export interface SystemStats {
   totalTools: number;
   totalBookings: number;
   activeBookings: number;
-  totalUsers: number;
-  totalRevenue: number;
+  totalUsers: number | null;
+  totalRevenue: number | null;
 }
 
 export async function getAdminStats(): Promise<SystemStats> {
-  try {
     const toolsRes = await getTools({});
-    const tools = toolsRes.items;
     const bookings = await getAllAdminBookings();
     const active = bookings.filter((b) => b.status === 'ACTIVE' || b.status === 'APPROVED');
-    const revenue = bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
     return {
-      totalTools: tools.length,
+      totalTools: toolsRes.total,
       totalBookings: bookings.length,
       activeBookings: active.length,
-      totalUsers: 14,
-      totalRevenue: revenue,
+      totalUsers: null,
+      totalRevenue: null,
     };
-  } catch {
-    const bookings = await mockGetBookings();
-    return {
-      totalTools: 6,
-      totalBookings: bookings.length,
-      activeBookings: bookings.filter((b) => b.status === 'ACTIVE' || b.status === 'APPROVED').length,
-      totalUsers: 14,
-      totalRevenue: bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0),
-    };
-  }
 }
 
 export async function getAllAdminTools(): Promise<Tool[]> {

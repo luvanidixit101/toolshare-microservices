@@ -309,7 +309,7 @@ export default function Profile() {
           </div>
           <div className="card p-6 border-red-200">
             <h3 className="font-semibold text-red-700 mb-2">Delete Account</h3>
-            <p className="text-sm text-gray-500 mb-4">Permanently delete your account and all associated data. This cannot be undone.</p>
+            <p className="text-sm text-gray-500 mb-4">Disable login and remove your profile. Rental and payment records may be retained for legal and accounting purposes.</p>
             <button onClick={() => setDeleteOpen(true)} className="btn-danger">
               <Trash2 size={16} /> Delete Account
             </button>
@@ -331,7 +331,7 @@ export default function Profile() {
         }
       >
         <p className="text-sm text-gray-600">
-          This will permanently delete your account, all your tool listings, bookings, and messages. This action <span className="font-semibold">cannot be undone</span>. Are you absolutely sure?
+          This disables your login and removes your profile. Rental and payment records may be retained where required. Are you sure?
         </p>
       </Modal>
     </div>

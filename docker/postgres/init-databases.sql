@@ -3,4 +3,4 @@ CREATE DATABASE toolshare_user;
 CREATE DATABASE toolshare_tool;
 CREATE DATABASE toolshare_booking;
 CREATE DATABASE toolshare_payment;
-
+CREATE DATABASE toolshare_ai;

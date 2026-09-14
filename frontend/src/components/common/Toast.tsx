@@ -11,6 +11,7 @@ export interface ToastItem {
 
 let pushFn: ((type: ToastType, message: string) => void) | null = null;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function toast(type: ToastType, message: string) {
   pushFn?.(type, message);
 }

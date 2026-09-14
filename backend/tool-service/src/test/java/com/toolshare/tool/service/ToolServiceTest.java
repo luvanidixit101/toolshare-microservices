@@ -1,6 +1,7 @@
 package com.toolshare.tool.service;
 
 import com.toolshare.tool.dto.ToolPatchRequest;
+import com.toolshare.tool.dto.CreateReviewRequest;
 import com.toolshare.tool.exception.ApiException;
 import com.toolshare.tool.model.Tool;
 import com.toolshare.tool.model.ToolCondition;
@@ -24,6 +25,20 @@ class ToolServiceTest {
     private final ToolRepository repository = mock(ToolRepository.class);
     private final ReviewRepository reviewRepository = mock(ReviewRepository.class);
     private final ToolService service = new ToolService(repository, reviewRepository);
+
+    @Test
+    void ownerCannotReviewOwnTool() {
+        UUID ownerId = UUID.randomUUID();
+        Tool tool = new Tool();
+        tool.setId(UUID.randomUUID());
+        tool.setOwnerId(ownerId);
+        when(repository.findById(tool.getId())).thenReturn(Optional.of(tool));
+
+        assertThatThrownBy(() -> service.addReview(tool.getId(), new CreateReviewRequest(5, "Great"),
+                new CurrentUser(ownerId, "owner@example.com", "Tool", "Owner", "USER")))
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Owners cannot review their own tools");
+    }
 
     @Test
     @SuppressWarnings("null")

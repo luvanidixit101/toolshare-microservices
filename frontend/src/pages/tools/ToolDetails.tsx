@@ -355,7 +355,7 @@ export default function ToolDetails() {
                   </div>
                   <div className="flex items-center gap-1.5 mt-1.5 text-xs font-semibold text-gray-900 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200 w-fit">
                     <Phone size={14} className="text-green-600" />
-                    <span>{tool.ownerPhone || '+91 98765 43210'}</span>
+                    <span>{tool.ownerPhone || 'Contact available after owner approval'}</span>
                   </div>
                 </div>
               </div>

@@ -15,10 +15,14 @@ import com.toolshare.booking.security.CurrentUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
 import java.util.List;
@@ -29,6 +33,9 @@ public class BookingService {
 
     private static final Logger log = LoggerFactory.getLogger(BookingService.class);
     private static final EnumSet<BookingStatus> CONFLICTING_STATUSES = EnumSet.of(BookingStatus.PENDING, BookingStatus.APPROVED, BookingStatus.ACTIVE);
+    private static final long MAX_RENTAL_DAYS = 30;
+    private static final long MAX_BOOKING_HORIZON_DAYS = 365;
+    private static final Duration PENDING_HOLD_DURATION = Duration.ofMinutes(30);
 
     private final BookingRepository repository;
     private final ToolClient toolClient;
@@ -45,6 +52,7 @@ public class BookingService {
         validateDates(request);
         ToolDetails tool = toolClient.getTool(request.toolId(), bearerToken);
         validateToolIsBookable(tool, currentUser);
+        repository.lockToolForBooking(request.toolId());
         validateNoConflict(request);
 
         long days = ChronoUnit.DAYS.between(request.startDate(), request.endDate());
@@ -63,11 +71,19 @@ public class BookingService {
         booking.setTotalPrice(totalPrice);
         booking.setSecurityDeposit(tool.securityDeposit());
         booking.setStatus(BookingStatus.PENDING);
+        booking.setExpiresAt(Instant.now().plus(PENDING_HOLD_DURATION));
 
         Booking saved = repository.save(booking);
         notificationPublisher.publish(NotificationEvent.booking("BOOKING_CREATED", currentUser.id(), saved.getOwnerId(), saved.getId()));
         log.info("Created booking {} for tool {}", saved.getId(), saved.getToolId());
         return toResponse(saved);
+    }
+
+    @Scheduled(fixedDelayString = "${toolshare.bookings.expiry-check-ms:60000}")
+    @Transactional
+    public void expirePendingBookings() {
+        int expired = repository.expirePendingBookings(Instant.now());
+        if (expired > 0) log.info("Expired {} abandoned pending bookings", expired);
     }
 
     @Transactional(readOnly = true)
@@ -152,7 +168,7 @@ public class BookingService {
             case CANCELLED -> cancel(id, currentUser);
             case COMPLETED -> complete(id, currentUser);
             case ACTIVE -> setActive(id, currentUser);
-            case PENDING -> throw new ApiException(HttpStatus.CONFLICT, "Booking cannot be moved back to PENDING");
+            case PENDING, EXPIRED -> throw new ApiException(HttpStatus.CONFLICT, "Unsupported booking status transition");
         };
     }
 
@@ -168,6 +184,13 @@ public class BookingService {
     private void validateDates(CreateBookingRequest request) {
         if (!request.endDate().isAfter(request.startDate())) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "End date must be after start date");
+        }
+        long rentalDays = ChronoUnit.DAYS.between(request.startDate(), request.endDate());
+        if (rentalDays > MAX_RENTAL_DAYS) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "Bookings cannot exceed 30 days");
+        }
+        if (request.startDate().isAfter(LocalDate.now().plusDays(MAX_BOOKING_HORIZON_DAYS))) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "Bookings cannot start more than 365 days ahead");
         }
     }
 

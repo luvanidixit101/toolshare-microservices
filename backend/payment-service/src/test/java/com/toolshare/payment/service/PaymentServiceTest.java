@@ -20,7 +20,16 @@ import static org.mockito.Mockito.when;
 class PaymentServiceTest {
 
     private final PaymentRepository paymentRepository = mock(PaymentRepository.class);
-    private final PaymentService service = new PaymentService(paymentRepository);
+    private final PaymentService service = new PaymentService(paymentRepository, true);
+
+    @Test
+    void productionModeRejectsMockPayments() {
+        PaymentService productionService = new PaymentService(paymentRepository, false);
+        assertThatThrownBy(() -> productionService.createMockPayment(
+                new PaymentRequest(UUID.randomUUID(), BigDecimal.TEN, "INR"),
+                new CurrentUser(UUID.randomUUID(), "user@example.com", "Test", "User", "USER")))
+                .hasMessageContaining("not configured");
+    }
 
     @Test
     @SuppressWarnings("null")

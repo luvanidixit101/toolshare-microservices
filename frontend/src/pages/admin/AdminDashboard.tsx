@@ -115,14 +115,13 @@ export default function AdminDashboard() {
   if (loading) return <FullPageSpinner label="Loading Admin Control Center..." />;
 
   const serviceNodes = [
-    { name: 'API Gateway', port: 8080, status: 'ONLINE', route: '/api/**' },
-    { name: 'Auth Service', port: 8081, status: 'ONLINE', route: '/api/auth/**' },
-    { name: 'User Service', port: 8082, status: 'ONLINE', route: '/api/users/**' },
-    { name: 'Tool Service', port: 8083, status: 'ONLINE', route: '/api/tools/**' },
-    { name: 'Booking Service', port: 8084, status: 'ONLINE', route: '/api/bookings/**' },
-    { name: 'Chat Service', port: 8085, status: 'ONLINE', route: '/api/chat/**' },
-    { name: 'Payment Service', port: 8086, status: 'ONLINE', route: '/api/payments/**' },
-    { name: 'AI Service', port: 8087, status: 'ONLINE', route: '/api/ai/**' },
+    { name: 'API Gateway', port: 8080, status: 'NOT MONITORED', route: '/api/**' },
+    { name: 'Auth Service', port: 8081, status: 'NOT MONITORED', route: '/api/auth/**' },
+    { name: 'User Service', port: 8082, status: 'NOT MONITORED', route: '/api/users/**' },
+    { name: 'Tool Service', port: 8083, status: 'NOT MONITORED', route: '/api/tools/**' },
+    { name: 'Booking Service', port: 8084, status: 'NOT MONITORED', route: '/api/bookings/**' },
+    { name: 'AI Service', port: 8086, status: 'NOT MONITORED', route: '/api/ai/**' },
+    { name: 'Payment Service', port: 8087, status: 'NOT MONITORED', route: '/api/payments/**' },
   ];
 
   return (
@@ -151,8 +150,8 @@ export default function AdminDashboard() {
           >
             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /> Refresh Data
           </button>
-          <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Platform Healthy
+          <span className="bg-gray-500/20 text-gray-200 border border-gray-400/30 px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5">
+            Monitoring not configured
           </span>
         </div>
       </div>
@@ -193,7 +192,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium">System Users</p>
-              <p className="text-xl font-bold text-gray-900">{stats.totalUsers}</p>
+              <p className="text-xl font-bold text-gray-900">{stats.totalUsers ?? '—'}</p>
             </div>
           </div>
           <div className="card p-4 flex items-center gap-3 col-span-2 lg:col-span-1">
@@ -202,7 +201,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium">Platform Volume</p>
-              <p className="text-xl font-bold text-gray-900">{formatPrice(stats.totalRevenue)}</p>
+              <p className="text-xl font-bold text-gray-900">{stats.totalRevenue == null ? '—' : formatPrice(stats.totalRevenue)}</p>
             </div>
           </div>
         </div>
@@ -386,12 +385,12 @@ export default function AdminDashboard() {
       {activeTab === 'services' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {serviceNodes.map((s) => (
-            <div key={s.name} className="card p-5 border-l-4 border-l-emerald-500">
+            <div key={s.name} className="card p-5 border-l-4 border-l-gray-400">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-                  <Server size={16} className="text-emerald-600" /> {s.name}
+                  <Server size={16} className="text-gray-600" /> {s.name}
                 </h4>
-                <span className="badge bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
+                <span className="badge bg-gray-100 text-gray-700 text-[10px] font-bold border border-gray-200">
                   {s.status}
                 </span>
               </div>

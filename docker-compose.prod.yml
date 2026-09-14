@@ -1,0 +1,140 @@
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks: [toolshare]
+  environment: &service-env
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: 5432
+    POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+    EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
+
+x-service-build: &service-build
+  context: .
+  dockerfile: backend/Dockerfile
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    networks: [toolshare]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: postgres
+    volumes:
+      - toolshare-postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  eureka-server:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args: { SERVICE: eureka-server }
+    environment:
+      EUREKA_INSTANCE_HOSTNAME: eureka-server
+
+  auth-service:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args: { SERVICE: auth-service }
+    environment:
+      <<: *service-env
+      AUTH_DB_NAME: toolshare_auth
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required}
+    depends_on: [postgres, eureka-server]
+
+  user-service:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args: { SERVICE: user-service }
+    environment:
+      <<: *service-env
+      USER_DB_NAME: toolshare_user
+    depends_on: [postgres, eureka-server]
+
+  tool-service:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args: { SERVICE: tool-service }
+    environment:
+      <<: *service-env
+      TOOL_DB_NAME: toolshare_tool
+    depends_on: [postgres, eureka-server]
+
+  booking-service:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args: { SERVICE: booking-service }
+    environment:
+      <<: *service-env
+      BOOKING_DB_NAME: toolshare_booking
+      TOOL_SERVICE_URL: http://tool-service:8083
+    depends_on: [postgres, eureka-server, tool-service]
+
+  payment-service:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args: { SERVICE: payment-service }
+    environment:
+      <<: *service-env
+      PAYMENT_DB_NAME: toolshare_payment
+      MOCK_PAYMENTS_ENABLED: "false"
+    depends_on: [postgres, eureka-server]
+
+  ai-service:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args: { SERVICE: ai-service }
+    environment:
+      <<: *service-env
+      AI_DB_NAME: toolshare_ai
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?GEMINI_API_KEY is required}
+    depends_on: [postgres, eureka-server]
+
+  api-gateway:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args: { SERVICE: api-gateway }
+    environment:
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
+      AUTH_SERVICE_URL: http://auth-service:8081
+      USER_SERVICE_URL: http://user-service:8082
+      TOOL_SERVICE_URL: http://tool-service:8083
+      BOOKING_SERVICE_URL: http://booking-service:8084
+      AI_SERVICE_URL: http://ai-service:8086
+      PAYMENT_SERVICE_URL: http://payment-service:8087
+      FRONTEND_URL: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN is required}
+    depends_on: [eureka-server, auth-service, user-service, tool-service, booking-service, payment-service, ai-service]
+
+  frontend:
+    restart: unless-stopped
+    networks: [toolshare]
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required}
+        VITE_USE_MOCK: "false"
+    ports:
+      - "${HTTP_PORT:-8088}:80"
+    depends_on: [api-gateway]
+
+networks:
+  toolshare:
+
+volumes:
+  toolshare-postgres-data:

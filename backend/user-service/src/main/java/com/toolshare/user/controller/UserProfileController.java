@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.toolshare.user.exception.ApiException;
+import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 import java.util.UUID;
@@ -43,7 +45,11 @@ public class UserProfileController {
 
     @Operation(summary = "Get user profile by ID")
     @GetMapping("/{id}")
-    public ApiResponse<UserProfileResponse> getById(@PathVariable UUID id) {
+    public ApiResponse<UserProfileResponse> getById(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        CurrentUser currentUser = CurrentUser.from(jwt);
+        if (!id.equals(currentUser.id()) && !currentUser.isAdmin()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You do not have access to this private profile");
+        }
         return ApiResponse.ok("Profile loaded", service.getById(id));
     }
 
@@ -85,4 +91,3 @@ public class UserProfileController {
         return ApiResponse.ok("Preferences updated", service.updatePreferences(CurrentUser.from(jwt), request));
     }
 }
-

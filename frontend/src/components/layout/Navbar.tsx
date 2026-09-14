@@ -8,6 +8,8 @@ import { classNames } from '@/utils';
 import { mockGetNotifications } from '@/services/mockData';
 import type { Notification } from '@/types';
 
+const USE_MOCK = import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true';
+
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
@@ -23,8 +25,10 @@ export default function Navbar() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && USE_MOCK) {
       mockGetNotifications().then((list) => setNotifications(list.filter((n) => n.type !== 'message')));
+    } else {
+      setNotifications([]);
     }
   }, [isAuthenticated]);
 

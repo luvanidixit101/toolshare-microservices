@@ -12,6 +12,8 @@ import { formatPrice, getToolImage } from '@/utils';
 import { toast } from '@/components/common/Toast';
 import { useAuth } from '@/context/AuthContext';
 
+const MOCK_CHECKOUT_ENABLED = import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true';
+
 interface CheckoutModalProps {
   open: boolean;
   onClose: () => void;
@@ -149,6 +151,10 @@ export default function CheckoutModal({
 
   const handlePayAndBook = async () => {
     if (!validatePayment()) return;
+    if (!MOCK_CHECKOUT_ENABLED) {
+      toast('error', 'Online payments are not configured yet. No booking or charge was created.');
+      return;
+    }
 
     setStep(3);
     setProcessing(true);
@@ -164,42 +170,26 @@ export default function CheckoutModal({
 
       setProcessingMessage('Processing secure test payment...');
 
-      // Step B: Create Payment
-      let paymentId = 'MOCK_PAY_' + Date.now();
-      try {
-        const paymentRes = await createPayment({
-          bookingId: booking.id,
-          amount: grandTotal,
-          currency: 'INR',
-        });
-        paymentId = paymentRes.id;
-      } catch (e) {
-        console.warn('Backend payment create fallback:', e);
-      }
+      const payment = await createPayment({
+        bookingId: booking.id,
+        amount: grandTotal,
+        currency: 'INR',
+      });
 
       setProcessingMessage('Verifying test payment authorization...');
 
-      // Step C: Confirm Mock Payment
-      let transactionId = 'MOCK_TXN_' + Date.now();
-      try {
-        const confirmed = await confirmMockPayment(paymentId);
-        if (confirmed.transactionRef) transactionId = confirmed.transactionRef;
-      } catch (e) {
-        console.warn('Backend payment confirm fallback:', e);
+      const confirmed = await confirmMockPayment(payment.id);
+      if (confirmed.status !== 'TEST_SUCCESS' || !confirmed.transactionRef) {
+        throw new Error('Payment was not confirmed. Your booking remains pending.');
       }
-
-      await new Promise((r) => setTimeout(r, 800));
 
       toast('success', 'Payment successful! Booking confirmed.');
       onClose();
 
       // Navigate to success page
       const params = new URLSearchParams({
+        paymentId: confirmed.id,
         bookingId: booking.id,
-        transactionId,
-        amount: formatPrice(grandTotal),
-        toolName: tool.name,
-        paymentMethod,
       });
       navigate(`/payments/success?${params.toString()}`);
     } catch (err: unknown) {

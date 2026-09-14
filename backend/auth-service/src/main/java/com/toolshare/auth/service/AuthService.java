@@ -1,6 +1,7 @@
 package com.toolshare.auth.service;
 
 import com.toolshare.auth.dto.AuthResponse;
+import com.toolshare.auth.dto.ChangePasswordRequest;
 import com.toolshare.auth.dto.ForgotPasswordRequest;
 import com.toolshare.auth.dto.LoginRequest;
 import com.toolshare.auth.dto.RefreshTokenRequest;
@@ -11,11 +12,15 @@ import com.toolshare.auth.model.Role;
 import com.toolshare.auth.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import com.toolshare.auth.dto.GoogleLoginRequest;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.JwtClaimValidator;
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,13 +36,28 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final JwtDecoder jwtDecoder;
-    private final JwtDecoder googleJwtDecoder = NimbusJwtDecoder.withJwkSetUri("https://www.googleapis.com/oauth2/v3/certs").build();
+    private final JwtDecoder googleJwtDecoder;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, JwtDecoder jwtDecoder) {
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            JwtDecoder jwtDecoder,
+            @Value("${toolshare.google.client-id}") String googleClientId
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.jwtDecoder = jwtDecoder;
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri("https://www.googleapis.com/oauth2/v3/certs").build();
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                new JwtTimestampValidator(),
+                new JwtClaimValidator<String>("iss", issuer ->
+                        "accounts.google.com".equals(issuer) || "https://accounts.google.com".equals(issuer)),
+                new JwtClaimValidator<java.util.List<String>>("aud", audience ->
+                        audience != null && audience.contains(googleClientId))
+        ));
+        this.googleJwtDecoder = decoder;
     }
 
     @Transactional
@@ -90,50 +110,50 @@ public class AuthService {
 
     @Transactional
     public AuthResponse googleLogin(GoogleLoginRequest request) {
-        String email;
-        String firstName;
-        String lastName;
-
-        String rawToken = request.idToken();
-        if (rawToken != null && rawToken.startsWith("mock_google_")) {
-            email = rawToken.replace("mock_google_", "") + "@gmail.com";
-            firstName = "Google";
-            lastName = "User";
-        } else {
-            try {
-                Jwt jwt = googleJwtDecoder.decode(rawToken);
-                email = jwt.getClaimAsString("email");
-                if (email == null || email.isBlank()) {
-                    throw new ApiException(HttpStatus.BAD_REQUEST, "Google token does not contain a valid email");
-                }
-                firstName = jwt.getClaimAsString("given_name");
-                lastName = jwt.getClaimAsString("family_name");
-                if (firstName == null || firstName.isBlank()) {
-                    firstName = jwt.getClaimAsString("name");
-                }
-                if (firstName == null || firstName.isBlank()) {
-                    firstName = "Google";
-                }
-                if (lastName == null) {
-                    lastName = "User";
-                }
-            } catch (Exception e) {
-                log.error("Failed to verify Google ID token: {}", e.getMessage());
-                throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid Google ID token");
-            }
+        String rawToken = request != null ? request.idToken() : null;
+        if (rawToken == null || rawToken.isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Google ID token is required");
+        }
+        if (rawToken.startsWith("mock_google_")) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid Google ID token");
         }
 
-        final String finalFirstName = firstName;
-        final String finalLastName = lastName;
+        final Jwt googleJwt;
+        try {
+            googleJwt = googleJwtDecoder.decode(rawToken);
+        } catch (Exception exception) {
+            log.warn("Rejected invalid Google ID token: {}", exception.getMessage());
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid Google ID token");
+        }
+
+        String subject = googleJwt.getSubject();
+        String email = googleJwt.getClaimAsString("email");
+        Boolean emailVerified = googleJwt.getClaim("email_verified");
+        if (subject == null || subject.isBlank() || email == null || email.isBlank() || !Boolean.TRUE.equals(emailVerified)) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Google account email is not verified");
+        }
+
+        String firstName = googleJwt.getClaimAsString("given_name");
+        String lastName = googleJwt.getClaimAsString("family_name");
+        if (firstName == null || firstName.isBlank()) firstName = "Google";
+        if (lastName == null || lastName.isBlank()) lastName = "User";
+
+        final String finalFirstName = firstName.trim();
+        final String finalLastName = lastName.trim();
         final String finalEmail = email.toLowerCase().trim();
 
-        AppUser user = userRepository.findByEmailIgnoreCase(finalEmail)
+        AppUser user = userRepository.findByGoogleSubject(subject)
                 .orElseGet(() -> {
+                    if (userRepository.existsByEmailIgnoreCase(finalEmail)) {
+                        throw new ApiException(HttpStatus.CONFLICT,
+                                "An account with this email already exists. Sign in with your password before linking Google.");
+                    }
                     log.info("Creating new user from Google Login: {}", finalEmail);
                     AppUser newUser = new AppUser();
                     newUser.setFirstName(finalFirstName);
                     newUser.setLastName(finalLastName);
                     newUser.setEmail(finalEmail);
+                    newUser.setGoogleSubject(subject);
                     newUser.setPhone("");
                     newUser.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
                     newUser.setRole(Role.USER);
@@ -150,8 +170,28 @@ public class AuthService {
     }
 
     public void forgotPassword(ForgotPasswordRequest request) {
-        userRepository.findByEmailIgnoreCase(request.email())
-                .ifPresent(user -> log.info("Forgot password requested for user {}", user.getId()));
+        throw new ApiException(HttpStatus.NOT_IMPLEMENTED,
+                "Password reset email is not configured. Contact support to recover your account.");
+    }
+
+    @Transactional
+    public void changePassword(UUID userId, ChangePasswordRequest request) {
+        AppUser user = userRepository.findById(userId)
+                .filter(AppUser::isEnabled)
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Account is unavailable"));
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Current password is incorrect");
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void disableAccount(UUID userId) {
+        AppUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Account not found"));
+        user.setEnabled(false);
+        userRepository.save(user);
     }
 
     private AuthResponse authResponse(AppUser user) {

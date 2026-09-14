@@ -27,6 +27,18 @@ class BookingServiceTest {
     private final BookingService service = new BookingService(repository, toolClient, notificationPublisher);
 
     @Test
+    void createRejectsRentalLongerThanThirtyDays() {
+        LocalDate start = LocalDate.now().plusDays(1);
+        CreateBookingRequest request = new CreateBookingRequest(UUID.randomUUID(), start, start.plusDays(31));
+
+        assertThatThrownBy(() -> service.create(request,
+                new CurrentUser(UUID.randomUUID(), "renter@example.com", "Renter", "User", "USER"),
+                "Bearer token"))
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Bookings cannot exceed 30 days");
+    }
+
+    @Test
     void createRejectsConflictingBooking() {
         UUID toolId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
@@ -46,4 +58,3 @@ class BookingServiceTest {
                 .hasMessage("Tool is already booked for the selected dates");
     }
 }
-

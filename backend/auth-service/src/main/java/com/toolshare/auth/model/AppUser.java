@@ -37,6 +37,9 @@ public class AppUser {
     @Column(nullable = false, unique = true, length = 160)
     private String email;
 
+    @Column(unique = true, length = 128)
+    private String googleSubject;
+
     @Column(length = 40)
     private String phone;
 
@@ -70,4 +73,3 @@ public class AppUser {
         email = email.toLowerCase();
     }
 }
-

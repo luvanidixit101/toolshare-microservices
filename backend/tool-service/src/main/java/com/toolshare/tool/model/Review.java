@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -15,7 +16,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "reviews")
+@Table(name = "reviews", uniqueConstraints = @UniqueConstraint(
+        name = "uk_review_tool_author", columnNames = {"tool_id", "author_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,10 +27,10 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(name = "tool_id", nullable = false)
     private UUID toolId;
 
-    @Column(nullable = false)
+    @Column(name = "author_id", nullable = false)
     private UUID authorId;
 
     private String authorName;

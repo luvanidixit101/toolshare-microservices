@@ -2,7 +2,7 @@
 
 export type ToolCondition = 'NEW' | 'LIKE_NEW' | 'GOOD' | 'FAIR';
 export type ToolStatus = 'ACTIVE' | 'INACTIVE';
-export type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+export type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
 export type PaymentStatus = 'PENDING' | 'TEST_SUCCESS' | 'FAILED' | 'CANCELLED' | 'REFUNDED';
 
 export interface User {

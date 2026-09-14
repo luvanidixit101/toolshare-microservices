@@ -30,16 +30,15 @@ export default function ForgotPassword() {
   };
 
   return (
-    <AuthLayout title="Forgot Password" subtitle="We'll send you a link to reset your password">
+    <AuthLayout title="Forgot Password" subtitle="Request help recovering access to your account">
       {sent ? (
         <div className="text-center">
           <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="text-green-500" size={32} />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">Check Your Email</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Recovery request received</h3>
           <p className="text-sm text-gray-500 mt-2">
-            We've sent a password reset link to <span className="font-medium text-gray-700">{email}</span>.
-            The link will expire in 30 minutes.
+            If recovery email is configured, instructions will be sent to <span className="font-medium text-gray-700">{email}</span>.
           </p>
           <Link to="/auth/login" className="btn-secondary mt-6 inline-flex items-center gap-2">
             <ArrowLeft size={16} /> Back to Login
@@ -67,7 +66,7 @@ export default function ForgotPassword() {
               </div>
             </div>
             <button type="submit" disabled={loading} className="btn-primary w-full py-3">
-              {loading ? 'Sending...' : 'Send Reset Link'}
+              {loading ? 'Submitting...' : 'Request Account Recovery'}
             </button>
           </form>
           <Link to="/auth/login" className="flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-gray-700 mt-6">

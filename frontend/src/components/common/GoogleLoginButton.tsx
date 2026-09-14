@@ -8,18 +8,35 @@ interface GoogleLoginButtonProps {
   onError?: (errorMsg: string) => void;
 }
 
+interface PromptMomentNotification {
+  isNotDisplayed: () => boolean;
+  isSkippedMoment: () => boolean;
+  getNotDisplayedReason: () => string;
+}
+
 declare global {
   interface Window {
     google?: {
       accounts: {
         id: {
           initialize: (config: { client_id: string; callback: (response: { credential: string }) => void }) => void;
-          prompt: () => void;
+          prompt: (momentListener?: (notification: PromptMomentNotification) => void) => void;
           renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void;
         };
       };
     };
   }
+}
+
+function extractErrorMessage(err: unknown, fallback = 'Google authentication failed'): string {
+  if (typeof err === 'string' && err.trim()) return err;
+  if (err && typeof err === 'object' && err !== null) {
+    const obj = err as { message?: string; raw?: { message?: string } };
+    if (typeof obj.message === 'string' && obj.message.trim()) return obj.message;
+    if (obj.raw && typeof obj.raw.message === 'string' && obj.raw.message.trim()) return obj.raw.message;
+  }
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
 }
 
 export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
@@ -31,67 +48,90 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const rawClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  const mockLoginEnabled = import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true';
   const isRealClientId = rawClientId.trim() !== '' && !rawClientId.includes('your-google-client-id');
   const googleClientId = isRealClientId ? rawClientId.trim() : '';
+
+  const runDevModeAuth = async () => {
+    if (!mockLoginEnabled) {
+      const message = 'Google Sign-In is unavailable. Check the configured Google client ID.';
+      if (onError) onError(message);
+      else alert(message);
+      return;
+    }
+    try {
+      setLoading(true);
+      const testEmail = prompt('Enter your Google email for testing (or click OK to proceed):', 'dixit.user');
+      if (testEmail === null) {
+        setLoading(false);
+        return;
+      }
+      const cleanEmail = testEmail.trim() || 'dixit.user';
+      const mockIdToken = 'mock_google_' + cleanEmail;
+      await googleLogin(mockIdToken);
+      if (onSuccess) onSuccess();
+      else navigate('/');
+    } catch (err: unknown) {
+      const msg = extractErrorMessage(err);
+      if (onError) onError(msg);
+      else alert(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!googleClientId) return;
 
-    // Dynamically load Google Identity Services SDK if Client ID is configured
     const scriptId = 'google-jssdk';
-    if (!document.getElementById(scriptId)) {
+    const initGsi = () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: async (response) => {
+            try {
+              setLoading(true);
+              await googleLogin(response.credential);
+              if (onSuccess) onSuccess();
+              else navigate('/');
+            } catch (err: unknown) {
+              const msg = extractErrorMessage(err);
+              if (onError) onError(msg);
+              else alert(msg);
+            } finally {
+              setLoading(false);
+            }
+          },
+        });
+      }
+    };
+
+    if (window.google?.accounts?.id) {
+      initGsi();
+    } else if (!document.getElementById(scriptId)) {
       const script = document.createElement('script');
       script.id = scriptId;
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.defer = true;
-      script.onload = () => {
-        if (window.google) {
-          window.google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: async (response) => {
-              try {
-                setLoading(true);
-                await googleLogin(response.credential);
-                onSuccess ? onSuccess() : navigate('/');
-              } catch (err: unknown) {
-                const msg = err instanceof Error ? err.message : 'Google authentication failed';
-                onError ? onError(msg) : alert(msg);
-              } finally {
-                setLoading(false);
-              }
-            },
-          });
-        }
-      };
+      script.onload = initGsi;
       document.body.appendChild(script);
     }
   }, [googleClientId, googleLogin, navigate, onSuccess, onError]);
 
   const handleGoogleClick = async () => {
     if (googleClientId && window.google?.accounts?.id) {
-      window.google.accounts.id.prompt();
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          if (mockLoginEnabled) runDevModeAuth();
+          else if (onError) onError('Google Sign-In was not displayed. Please try again.');
+        }
+      });
       return;
     }
 
-
-    // Interactive Fallback / Developer Mode when Google Client ID is not yet set in .env
-    try {
-      setLoading(true);
-      const testEmail = prompt('Enter your Google email for testing (or leave default):', 'dixit.user');
-      if (testEmail === null) {
-        setLoading(false);
-        return; // User cancelled
-      }
-      const mockIdToken = 'mock_google_' + (testEmail.trim() || 'user');
-      await googleLogin(mockIdToken);
-      onSuccess ? onSuccess() : navigate('/');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Google authentication failed';
-      onError ? onError(msg) : alert(msg);
-    } finally {
-      setLoading(false);
-    }
+    if (mockLoginEnabled) await runDevModeAuth();
+    else if (onError) onError('Google Sign-In is not configured.');
   };
 
   return (

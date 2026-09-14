@@ -28,9 +28,9 @@ public class AiConversationService {
     }
 
     @Transactional
-    public ChatResult chat(String message, String conversationId) {
+    public ChatResult chat(String message, String conversationId, UUID ownerId) {
 
-        Conversation conversation = getOrCreateConversation(conversationId);
+        Conversation conversation = getOrCreateConversation(conversationId, ownerId);
 
         saveMessage(
                 conversation,
@@ -60,10 +60,12 @@ public class AiConversationService {
     }
 
     @SuppressWarnings("null")
-    private Conversation getOrCreateConversation(String conversationId) {
+    private Conversation getOrCreateConversation(String conversationId, UUID ownerId) {
 
         if (conversationId == null || conversationId.isBlank()) {
-            return conversationRepository.save(new Conversation());
+            Conversation conversation = new Conversation();
+            conversation.setOwnerId(ownerId);
+            return conversationRepository.save(conversation);
         }
 
         UUID id;
@@ -76,12 +78,16 @@ public class AiConversationService {
             );
         }
 
-        return conversationRepository.findById(id)
+        Conversation conversation = conversationRepository.findById(id)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
                                 "Conversation not found"
                         )
                 );
+        if (!ownerId.equals(conversation.getOwnerId())) {
+            throw new IllegalArgumentException("Conversation not found");
+        }
+        return conversation;
     }
 
     private void saveMessage(

@@ -39,7 +39,7 @@ export async function changePassword(payload: ChangePasswordPayload): Promise<vo
     await new Promise((r) => setTimeout(r, 600));
     return;
   }
-  await api.put('/profile/password', payload);
+  await api.put('/auth/password', payload);
 }
 
 export async function deleteAccount(): Promise<void> {
@@ -48,6 +48,7 @@ export async function deleteAccount(): Promise<void> {
     return;
   }
   await api.delete('/profile');
+  await api.delete('/auth/me');
 }
 
 export default { getProfile, updateProfile, changePassword, deleteAccount };

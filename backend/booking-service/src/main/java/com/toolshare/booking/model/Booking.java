@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -67,6 +68,12 @@ public class Booking {
     @Column(nullable = false, length = 20)
     private BookingStatus status = BookingStatus.PENDING;
 
+    @Column
+    private Instant expiresAt;
+
+    @Version
+    private Long version;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -85,4 +92,3 @@ public class Booking {
         updatedAt = Instant.now();
     }
 }
-

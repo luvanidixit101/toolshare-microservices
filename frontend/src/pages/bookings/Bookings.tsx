@@ -196,7 +196,7 @@ export default function Bookings() {
                           <User size={13} className="text-primary-600 shrink-0" /> {isOwner ? (booking.renterName || 'Renter') : booking.ownerName}
                         </p>
                         <p className="text-xs font-semibold text-green-700 flex items-center gap-1 mt-1 font-mono">
-                          <Phone size={12} className="text-green-600 shrink-0" /> {booking.ownerPhone || '+91 98765 43210'}
+                          <Phone size={12} className="text-green-600 shrink-0" /> {booking.ownerPhone || 'Contact unavailable'}
                         </p>
                       </div>
                       <div>
@@ -247,7 +247,7 @@ export default function Bookings() {
                         Receipt
                       </Link>
                       <div className="text-xs font-semibold text-green-800 bg-green-50/90 border border-green-200 px-3 py-2 rounded-xl flex items-center gap-1.5 font-mono">
-                        <Phone size={13} className="text-green-600" /> Contact: {booking.ownerPhone || '+91 98765 43210'}
+                        <Phone size={13} className="text-green-600" /> Contact: {booking.ownerPhone || 'Unavailable'}
                       </div>
                       {booking.status === 'ACTIVE' && (
                         <button

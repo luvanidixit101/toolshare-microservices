@@ -25,7 +25,8 @@ class AuthServiceTest {
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final JwtService jwtService = mock(JwtService.class);
     private final JwtDecoder jwtDecoder = mock(JwtDecoder.class);
-    private final AuthService authService = new AuthService(userRepository, passwordEncoder, jwtService, jwtDecoder);
+    private final AuthService authService = new AuthService(
+            userRepository, passwordEncoder, jwtService, jwtDecoder, "test-client-id.apps.googleusercontent.com");
 
     @Test
     void registerHashesPasswordAndReturnsTokens() {
@@ -63,40 +64,11 @@ class AuthServiceTest {
     }
 
     @Test
-    void googleLoginCreatesNewUserIfNotFound() {
-        when(userRepository.findByEmailIgnoreCase("gtest@gmail.com")).thenReturn(Optional.empty());
-        when(userRepository.save(any(AppUser.class))).thenAnswer(invocation -> {
-            AppUser u = invocation.getArgument(0);
-            u.setId(UUID.randomUUID());
-            return u;
-        });
-        when(jwtService.createAccessToken(any(AppUser.class))).thenReturn("access-token");
-        when(jwtService.createRefreshToken(any(AppUser.class))).thenReturn("refresh-token");
-
-        var response = authService.googleLogin(new com.toolshare.auth.dto.GoogleLoginRequest("mock_google_gtest"));
-
-        assertThat(response.token()).isEqualTo("access-token");
-        assertThat(response.email()).isEqualTo("gtest@gmail.com");
-    }
-
-    @Test
-    void googleLoginAuthenticatesExistingUser() {
-        AppUser user = new AppUser();
-        user.setId(UUID.randomUUID());
-        user.setEmail("existing@gmail.com");
-        user.setFirstName("Existing");
-        user.setLastName("User");
-        user.setRole(Role.USER);
-        user.setEnabled(true);
-
-        when(userRepository.findByEmailIgnoreCase("existing@gmail.com")).thenReturn(Optional.of(user));
-        when(jwtService.createAccessToken(any(AppUser.class))).thenReturn("access-token");
-        when(jwtService.createRefreshToken(any(AppUser.class))).thenReturn("refresh-token");
-
-        var response = authService.googleLogin(new com.toolshare.auth.dto.GoogleLoginRequest("mock_google_existing"));
-
-        assertThat(response.token()).isEqualTo("access-token");
-        assertThat(response.email()).isEqualTo("existing@gmail.com");
+    void googleLoginRejectsMockToken() {
+        assertThatThrownBy(() -> authService.googleLogin(
+                new com.toolshare.auth.dto.GoogleLoginRequest("mock_google_admin@example.com")))
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Invalid Google ID token");
     }
 }
 

@@ -13,6 +13,9 @@ public class Conversation {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column
+    private UUID ownerId;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -33,6 +36,14 @@ public class Conversation {
 
     public UUID getId() {
         return id;
+    }
+
+    public UUID getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(UUID ownerId) {
+        this.ownerId = ownerId;
     }
 
     public LocalDateTime getCreatedAt() {

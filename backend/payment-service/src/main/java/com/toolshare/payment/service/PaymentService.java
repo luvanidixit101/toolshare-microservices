@@ -7,6 +7,7 @@ import com.toolshare.payment.model.Payment;
 import com.toolshare.payment.model.PaymentStatus;
 import com.toolshare.payment.repository.PaymentRepository;
 import com.toolshare.payment.security.CurrentUser;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,13 +19,19 @@ import java.util.UUID;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final boolean mockPaymentsEnabled;
 
-    public PaymentService(PaymentRepository paymentRepository) {
+    public PaymentService(
+            PaymentRepository paymentRepository,
+            @Value("${toolshare.payments.mock-enabled:false}") boolean mockPaymentsEnabled
+    ) {
         this.paymentRepository = paymentRepository;
+        this.mockPaymentsEnabled = mockPaymentsEnabled;
     }
 
     @Transactional
     public PaymentResponse createMockPayment(PaymentRequest request, CurrentUser currentUser) {
+        requireMockPaymentsEnabled();
         Payment payment = new Payment();
         payment.setBookingId(request.bookingId());
         payment.setPayerId(currentUser.id());
@@ -60,6 +67,7 @@ public class PaymentService {
     @Transactional
     @SuppressWarnings("null")
     public PaymentResponse confirmMockPayment(UUID paymentId, CurrentUser currentUser) {
+        requireMockPaymentsEnabled();
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Payment not found"));
 
@@ -79,6 +87,7 @@ public class PaymentService {
     @Transactional
     @SuppressWarnings("null")
     public PaymentResponse failMockPayment(UUID paymentId, CurrentUser currentUser) {
+        requireMockPaymentsEnabled();
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Payment not found"));
 
@@ -88,6 +97,13 @@ public class PaymentService {
 
         payment.setStatus(PaymentStatus.FAILED);
         return toResponse(paymentRepository.save(payment));
+    }
+
+    private void requireMockPaymentsEnabled() {
+        if (!mockPaymentsEnabled) {
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Online payments are not configured. No payment has been collected.");
+        }
     }
 
     private PaymentResponse toResponse(Payment payment) {

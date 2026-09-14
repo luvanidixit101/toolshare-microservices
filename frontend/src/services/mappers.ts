@@ -80,7 +80,9 @@ export function mapTool(raw: Record<string, unknown>): Tool {
     images,
     ownerId: toString(raw.ownerId),
     ownerName: toString(raw.ownerName, 'Unknown'),
-    ownerPhone: toString(raw.ownerPhone || raw.phone || raw.ownerContact, '+91 98765 43210'),
+    ownerPhone: raw.ownerPhone || raw.phone || raw.ownerContact
+      ? toString(raw.ownerPhone || raw.phone || raw.ownerContact)
+      : undefined,
     ownerRating: toNumber(raw.ownerRating),
     rating: toNumber(raw.rating),
     reviewCount: toNumber(raw.reviewCount),
@@ -126,7 +128,9 @@ export function mapBooking(raw: Record<string, unknown>): Booking {
     toolImage: raw.toolImage ? toString(raw.toolImage) : undefined,
     ownerId: toString(raw.ownerId),
     ownerName: toString(raw.ownerName, 'Owner'),
-    ownerPhone: toString(raw.ownerPhone || raw.phone || raw.ownerContact, '+91 98765 43210'),
+    ownerPhone: raw.ownerPhone || raw.phone || raw.ownerContact
+      ? toString(raw.ownerPhone || raw.phone || raw.ownerContact)
+      : undefined,
     renterId: toString(raw.renterId),
     renterName: toString(raw.renterName, 'Renter'),
     startDate: toDateString(raw.startDate),

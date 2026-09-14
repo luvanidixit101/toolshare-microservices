@@ -5,8 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableJpaAuditing
+@EnableScheduling
 @SpringBootApplication
 public class BookingServiceApplication {
 
@@ -17,4 +19,3 @@ public class BookingServiceApplication {
         log.info("ToolShare Booking Service started on port 8084");
     }
 }
-

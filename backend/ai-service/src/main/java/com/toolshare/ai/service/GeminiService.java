@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.Duration;
 
 @Service
 public class GeminiService {
@@ -64,7 +65,8 @@ public class GeminiService {
 
         List<Map<String, Object>> contents = new ArrayList<>();
 
-        for (AiMessage message : history) {
+        int firstMessage = Math.max(0, history.size() - 20);
+        for (AiMessage message : history.subList(firstMessage, history.size())) {
 
             String role = message.getRole() == AiMessage.Role.USER
                     ? "user"
@@ -121,7 +123,7 @@ public class GeminiService {
                                 )
                 )
                 .bodyToMono(String.class)
-                .block();
+                .block(Duration.ofSeconds(20));
 
         return extractText(response);
     }

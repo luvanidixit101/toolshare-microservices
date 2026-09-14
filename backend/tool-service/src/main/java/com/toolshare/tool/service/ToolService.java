@@ -158,6 +158,12 @@ public class ToolService {
     @SuppressWarnings("null")
     public ReviewResponse addReview(UUID toolId, CreateReviewRequest request, CurrentUser currentUser) {
         Tool tool = find(toolId);
+        if (tool.getOwnerId().equals(currentUser.id())) {
+            throw new ApiException(HttpStatus.CONFLICT, "Owners cannot review their own tools");
+        }
+        if (reviewRepository.existsByToolIdAndAuthorId(toolId, currentUser.id())) {
+            throw new ApiException(HttpStatus.CONFLICT, "You have already reviewed this tool");
+        }
 
         Review review = new Review();
         review.setToolId(toolId);

@@ -73,7 +73,7 @@ export async function logout(): Promise<void> {
 }
 
 export async function googleLogin(idToken: string): Promise<AuthUser> {
-  if (USE_MOCK || idToken.startsWith('mock_google_')) {
+  if (USE_MOCK) {
     await new Promise((r) => setTimeout(r, 600));
     const user: AuthUser = {
       id: 'g-user-' + Date.now(),
